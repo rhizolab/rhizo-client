@@ -1,0 +1,3 @@
+*.py[cod]
+config.hjson
+local.hjson

@@ -1,0 +1,4 @@
+local.hjson
+logs
+.cache
+__pycache__

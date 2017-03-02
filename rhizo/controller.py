@@ -106,7 +106,6 @@ class Controller(object):
                         pass
                 if not success:
                     logging.warning('unable to load extension: %s' % extension_name)
-                    return False
             self.start_greenlets()
             for extension in self._extensions:
                 if hasattr(extension, 'init'):

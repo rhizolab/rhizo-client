@@ -1,4 +1,3 @@
-import time
 import random
 import base64
 import logging
@@ -75,6 +74,7 @@ class PiCameraDevice(object):
 
     # initialize a camera connection using parameters in the given config
     def __init__(self, config):
+        import picamera
         self.camera = picamera.PiCamera()
         if 'width' in config and 'height' in config:
             self.camera.resolution = (config.width, config.height)
@@ -100,20 +100,27 @@ class PiCameraDevice(object):
     # capture and save an image as a jpeg file on the local file system
     def save_image(self, file_name):
         from picamera import PiCameraRuntimeError
-        start_time = time.time()
         while True:
             try:
-                self.camera.capture(file_name, format = 'jpeg', quality = self.jpeg_quality)
+                self.camera.capture(file_name, format='jpeg', quality=self.jpeg_quality)
                 break
             except PiCameraRuntimeError:
                 logging.warning('camera error; will try again')
                 gevent.sleep(2)
-            if time.time() - start_time > 10:
-                logging.warning('camera timeout; will try again')
 
     # capture an image from the camera and return an image object (PIL image)
     def capture_image(self):
-        pass  # not implemented yet
+        from picamera import PiCameraRuntimeError
+        while True:
+            try:
+                stream = cStringIO.StringIO()
+                self.camera.capture(stream, format='jpeg', quality=self.jpeg_quality)
+                break
+            except PiCameraRuntimeError:
+                logging.warning('camera error; will try again')
+                gevent.sleep(2)
+        stream.seek(0)
+        return Image.open(stream)
 
 
 ## The USBCameraDevice class connects to a USB camera using the pygame library.

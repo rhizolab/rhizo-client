@@ -36,7 +36,7 @@ class Controller(object):
 
         # initialize member variables
         self.config = None  # publicly accessible
-        self.VERSION = '0.0.3'
+        self.VERSION = '0.0.4'
         self.BUILD = 'unknown'
         self._web_socket = None
         self._script_execs = {}
@@ -413,9 +413,9 @@ class Controller(object):
             channel = message_struct.get('channel')
             response_message = None
             if type == 'run_script' or type == 'runScript':
-                self.run_script(params['fileName'], channel)
+                self.run_script(params['file_name'], channel)
             elif type == 'stop_script' or type == 'stopScript':
-                self.stop_script(params['fileName'])
+                self.stop_script(params['file_name'])
             elif type == 'get_config' or type == 'getConfig':
                 response_message = self.config_message(params['names'].split(','))
             elif type == 'set_config' or type == 'setConfig':

@@ -60,9 +60,9 @@ class ScriptExec(object):
     def send_status(self, status_name, exception = None):
         if self._controller.web_socket_connected():
             message_struct = {
-                'type': 'scriptStatus',
+                'type': 'script_status',
                 'parameters': {
-                    'scriptName': self._rel_file_name,
+                    'script_name': self._rel_file_name,
                     'status': status_name,
                 }
             }

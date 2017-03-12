@@ -22,7 +22,6 @@ from ws4py.client.geventclient import WebSocketClient
 import config
 import util
 from extensions.resources import Resources  # fix(soon): remove this and require add as extension?
-from script_exec import ScriptExec
 import kbhit
 
 
@@ -39,10 +38,8 @@ class Controller(object):
         self.VERSION = '0.0.4'
         self.BUILD = 'unknown'
         self._web_socket = None
-        self._script_execs = {}
         self._local_seq_files = {}
         self._extensions = []
-        self._interactive = False
         self._outgoing_messages = []
         self._message_handler = None  # user-defined message handler
         self._error_handlers = []
@@ -85,7 +82,7 @@ class Controller(object):
                 class_name = underscores_to_camel(extension_name)
                 class_name = class_name[0].upper() + class_name[1:]
                 module_name = extension_name
-                if extension_name == 'serial':
+                if extension_name == 'serial':  # avoid conflict with pyserial
                     module_name = 'serial_'
                 paths = [''] + self.config.get('extension_paths', [])
                 success = False
@@ -412,11 +409,7 @@ class Controller(object):
             params = message_struct['parameters']
             channel = message_struct.get('channel')
             response_message = None
-            if type == 'run_script' or type == 'runScript':
-                self.run_script(params['file_name'], channel)
-            elif type == 'stop_script' or type == 'stopScript':
-                self.stop_script(params['file_name'])
-            elif type == 'get_config' or type == 'getConfig':
+            if type == 'get_config' or type == 'getConfig':
                 response_message = self.config_message(params['names'].split(','))
             elif type == 'set_config' or type == 'setConfig':
                 self.set_config(params)
@@ -529,24 +522,6 @@ class Controller(object):
             output_file.write(line)
         output_file.close()
         self.reload_config()
-
-    # run a local script; fileName is relative to current directory
-    def run_script(self, rel_file_name, channel):
-        if rel_file_name in self._script_execs:
-            script_exec = self._script_execs[rel_file_name]
-            script_exec.channel = channel
-            script_exec.start()
-        else:
-            script_exec = ScriptExec(self, rel_file_name, channel)
-            self._script_execs[rel_file_name] = script_exec
-            script_exec.start()
-
-    # stop the requested script (if it is running)
-    def stop_script(self, rel_file_name):
-        if rel_file_name in self._script_execs:
-            self._script_execs[rel_file_name].stop()
-        else:
-            logging.warning('stop_script: script not found: %s' % rel_file_name)
 
     # request a PIN and key from the server;
     # this should run before any other greenlets are running

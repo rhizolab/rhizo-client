@@ -116,8 +116,10 @@ class Serial(object):
     # fix(soon): only works with single serial port
     def send_command(self, device_id, command):
         if device_id == '*':
+            message = '%s:%s' % (device_id, command)
+            logging.debug('sending broadcast command %s' % command)
             for port in self._ports:
-                self._ports[port].write_command(command)
+                self._ports[port].write_command(message)
         if self._ports:
             port_name = self._ports.keys()[0]  # note: only works with single serial port
         else:
@@ -125,7 +127,7 @@ class Serial(object):
         device_key = (port_name, device_id)
         if device_key in self._devices:
             self._devices[device_key].send_command(command)
-        else:
+        elif device_id != '*':
             logging.warning('send_command to unrecognized device (%s)' % device_id)
 
     # sets a custom handler for serial messages (can be multiple)

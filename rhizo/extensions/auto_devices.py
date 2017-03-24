@@ -67,7 +67,7 @@ class AutoDevice(Device):
                 self.sent_info = True
                 self._controller.send_message('device_added', self.as_dict())
                 if self.dir == 'in':
-                    device.send_command('interval 1')  # inform sensors to send their values once per second
+                    self.send_command('interval 1')  # inform sensors to send their values once per second
 
             # command not used here
             else:

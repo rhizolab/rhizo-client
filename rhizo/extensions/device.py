@@ -66,50 +66,52 @@ class Device(object):
             port = serial.port(self._port_name) if self._port_name else serial.port()
             while port.busy:  # we don't want to interleave serial messages
                 gevent.sleep(0.1)
-            port.busy = True
-            self._last_ack = ''
-            ack_match = False
-            count = 0
-            send_q_r = False
-            while not ack_match:
-                port.check_sum_error = False  # reset this at the top of the command
-                start_time = time.time()
-                if send_q_r:
-                    message = '%s:%s' % (self._device_id, 'qr')
-                    port.write_command(message)
-                    logging.debug('requesting resend %s:%s' % (self._device_id, command))
-                    logging.debug('sending %s:%s' % (self._device_id, 'qr'))
-                else:
-                    message = '%s:%s' % (self._device_id, command)
-                    if command != 'q' or not self._controller.config.get('serial', {}).get('quiet_polling', True):
-                        logging.debug('sending %s:%s' % (self._device_id, command))
-                    port.write_command(message)
-                    if count > 0:
-                        logging.debug('resend %d: %s:%s' % (count, self._device_id, command))
-                    count += 1
-
-                # if broadcast message then we won't get an ack, we can break here
-                if self._device_id == '*':
-                    ack_match = True
-                    break
-
-                # wait until ack or timeout
-                while time.time() - start_time < 2:
-                    gevent.sleep(0.05)
+            try:
+                port.busy = True
+                self._last_ack = ''
+                ack_match = False
+                count = 0
+                send_q_r = False
+                while not ack_match:
+                    port.check_sum_error = False  # reset this at the top of the command
+                    start_time = time.time()
                     if send_q_r:
-                        if self._last_ack == 'qr':
-                            ack_match = True
-                            break
+                        message = '%s:%s' % (self._device_id, 'qr')
+                        port.write_command(message)
+                        logging.debug('requesting resend %s:%s' % (self._device_id, command))
+                        logging.debug('sending %s:%s' % (self._device_id, 'qr'))
                     else:
-                        if self._last_ack == command:
-                            ack_match = True
-                            break
+                        message = '%s:%s' % (self._device_id, command)
+                        if command != 'q' or not self._controller.config.get('serial', {}).get('quiet_polling', True):
+                            logging.debug('sending %s:%s' % (self._device_id, command))
+                        port.write_command(message)
+                        if count > 0:
+                            logging.debug('resend %d: %s:%s' % (count, self._device_id, command))
+                        count += 1
 
-                # see if we need to request a resend of messages
-                if port.check_sum_error and ack_match and self._controller.config.serial.get('enable_polling_resends', False):
-                    send_q_r = True
-                    ack_match = False
+                    # if broadcast message then we won't get an ack, we can break here
+                    if self._device_id == '*':
+                        ack_match = True
+                        break
 
-            port.busy = False
+                    # wait until ack or timeout
+                    while time.time() - start_time < 2:
+                        gevent.sleep(0.05)
+                        if send_q_r:
+                            if self._last_ack == 'qr':
+                                ack_match = True
+                                break
+                        else:
+                            if self._last_ack == command:
+                                ack_match = True
+                                break
+
+                    # see if we need to request a resend of messages
+                    if port.check_sum_error and ack_match and self._controller.config.serial.get('enable_polling_resends', False):
+                        send_q_r = True
+                        ack_match = False
+
+            finally:
+                port.busy = False
         else:
             logging.debug('[sim] %s: %s' % (self._device_id, command))

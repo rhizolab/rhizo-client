@@ -63,7 +63,7 @@ class KBHit:
 
         else:
             if echo:
-                self.new_term[3] = (self.new_term[3] & termios.ICANON & termios.ECHO)
+                self.new_term[3] = (self.new_term[3] | termios.ICANON | termios.ECHO)
             else:
                 self.new_term[3] = (self.new_term[3] & ~termios.ICANON & ~termios.ECHO)
 

@@ -3,7 +3,7 @@ import base64
 import logging
 import cStringIO
 import gevent
-from PIL import Image
+from PIL import Image, ImageDraw
 
 
 # The CameraDevice class represents a connection to camera hardware.
@@ -40,6 +40,9 @@ class SimCameraDevice(object):
         self.height = config.get('height', 720)
         self.frame_index = 0
         self.opened = True
+        self.image = None
+        if 'image' in config:
+            self.image = Image.open(config.image).resize((self.width, self.height))
 
     # close the connection to the camera
     def close(self):
@@ -58,14 +61,21 @@ class SimCameraDevice(object):
     # capture an image from the camera and return an image object (PIL image)
     def capture_image(self):
         assert self.opened
-        r = random.randint(0, 255)
-        g = random.randint(0, 255)
-        b = random.randint(0, 255)
-        image = Image.new('RGB', (self.width, self.height))
-        pixel_data = image.load()
-        for y in xrange(self.height):
-            for x in xrange(self.width):
-                pixel_data[x, y] = (r, g, b)
+        if self.image:
+            image = self.image.copy()
+        else:
+            r = random.randint(0, 255)
+            g = random.randint(0, 255)
+            b = random.randint(0, 255)
+            image = Image.new('RGB', (self.width, self.height))
+            pixel_data = image.load()
+            for y in xrange(self.height):
+                for x in xrange(self.width):
+                    pixel_data[x, y] = (r, g, b)
+        drawer = ImageDraw.Draw(image)
+        drawer.text((10, 10), '%d' % self.frame_index)  # a diagnostic indicator so that we know we're getting live/changing images
+        drawer.text((10, 30), '*' * (self.frame_index % 20))  # a diagnostic indicator so that we know we're getting live/changing images
+        self.frame_index += 1
         return image
 
 
@@ -73,9 +83,14 @@ class SimCameraDevice(object):
 class PiCameraDevice(object):
 
     # initialize a camera connection using parameters in the given config
-    def __init__(self, config):
-        import picamera
-        self.camera = picamera.PiCamera()
+    def __init__(self, config, warn_on_error = True):
+        try:
+            import picamera
+            self.camera = picamera.PiCamera()
+        except:
+            self.camera = None
+            if warn_on_error:
+                logging.warning('unable to open Pi camera')
         if 'width' in config and 'height' in config:
             self.camera.resolution = (config.width, config.height)
         if 'exposure_mode' in config:
@@ -127,11 +142,17 @@ class PiCameraDevice(object):
 class USBCameraDevice(object):
 
     # initialize a camera connection using parameters in the given config
-    def __init__(self, config):
+    def __init__(self, config, warn_on_error = True):
         import pygame.camera
         pygame.camera.init()
-        self.camera = pygame.camera.Camera(pygame.camera.list_cameras()[0])  # connect to first camera
-        self.camera.start()
+        camera_list = pygame.camera.list_cameras()
+        if camera_list:
+            self.camera = pygame.camera.Camera(camera_list[0])  # connect to first camera
+            self.camera.start()
+        else:
+            if warn_on_error:
+                logging.warning('unable to open USB camera')
+            self.camera = None
 
     # close the connection to the camera
     def close(self):

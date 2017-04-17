@@ -57,7 +57,11 @@ class ResourceClient(object):
     def __init__(self, config, controller = None):
         self._secret_key = config.secret_key
         self._server_name = config.server_name
-        self._secure_server = config.get('secure_server', True)
+        if 'secure_server' in config:
+            self._secure_server = config.secure_server
+        else:
+            host_name = config.server_name.split(':')[0]
+            self._secure_server = host_name != 'localhost' and host_name != '127.0.0.1'
         self._enable_cache = config.get('enable_cache', False)
         self._controller = controller
 

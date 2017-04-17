@@ -441,7 +441,12 @@ class Controller(object):
 
     # initiate a websocket connection with the server
     def connect_web_socket(self):
-        protocol = 'wss' if self.config.get('secure_server', True) else 'ws'
+        if 'secure_server' in self.config:
+            secure_server = self.config.secure_server
+        else:
+            host_name = self.config.server_name.split(':')[0]
+            secure_server = host_name != 'localhost' and host_name != '127.0.0.1'
+        protocol = 'wss' if secure_server else 'ws'
         if self.config.get('old_auth', False):
             headers = None
         else:

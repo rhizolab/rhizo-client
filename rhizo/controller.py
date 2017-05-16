@@ -22,7 +22,6 @@ from ws4py.client.geventclient import WebSocketClient
 import config
 import util
 from extensions.resources import Resources  # fix(soon): remove this and require add as extension?
-import kbhit
 
 
 # A Controller object contains and manages various communication and control threads.
@@ -59,8 +58,10 @@ class Controller(object):
         if not self.config:
             sys.exit(1)
 
-        # initialize other
-        self._kb = kbhit.KBHit()
+        # initialize other controller attributes
+        if self.config.get('enable_keyboard_monitor', False):
+            import kbhit
+            self._kb = kbhit.KBHit()
         self.find_build_ref()
         self.prep_logger(options.verbose or self.config.get('verbose', False))  # make verbose if in config or command-line options
         self.show_config()

@@ -35,9 +35,6 @@ class AutoDevice(Device):
                         self.sent_info = True
                         self._controller.send_message('device_added', self.as_dict())
 
-                    # send a message to the server
-                    self._controller.send_message('sensor_update', {'name': self.name, 'values': values})
-
                     # call handlers
                     self._controller.auto_devices.run_input_handlers(self, values)
 

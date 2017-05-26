@@ -428,7 +428,10 @@ class Controller(object):
                         if message_used:
                             break
                 if not message_used and self._message_handler:
-                    self._message_handler(type, params)
+                    if hasattr(self._message_handler, 'handle_message'):
+                        self._message_handler.handle_message(type, params)
+                    else:
+                        self._message_handler(type, params)
             if response_message:
                 if channel:
                     response_message['channel'] = channel

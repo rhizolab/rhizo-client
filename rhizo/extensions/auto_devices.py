@@ -214,7 +214,10 @@ class AutoDevices(object):
     # run functions when we receive data from a sensor
     def run_input_handlers(self, device, values):
         for handler in self._input_handlers:
-            handler(device.name, values)
+            if hasattr(handler, 'handle_input'):  # handler is object
+                handler.handle_input(device.name, values)
+            else:  # handler is function
+                handler(device.name, values)
 
     # add a function that will get called when we receive data from a sensor
     def add_input_handler(self, handler):

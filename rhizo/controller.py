@@ -8,6 +8,7 @@ import base64
 import socket
 import logging
 import logging.handlers
+import datetime
 import traceback
 import importlib
 from optparse import OptionParser
@@ -248,16 +249,29 @@ class Controller(object):
                 if self._web_socket:
                     self.send_message('update_sequence', {'sequence': sequence_name, 'value': value})
             else:  # note that this case currently requires an absolute path on the server
-                if not self.resources:
+                if not self.resources:  # create a resource client instance if not already done
                     self.resources = Resources(self)
                 value = str(value)  # write_file currently expects string values
-                while True:
+                while True:  # repeat until verified that value is written
                     self.resources.write_file(sequence_name, value)
                     server_value = self.resources.read_file(sequence_name)
                     if value == server_value:
                         break
+                    gevent.sleep(0.5)
         if self.config.get('enable_local_sequence_storage', False):
             self.store_local_sequence_value(sequence_name, value)
+
+    # update multiple sequences; timestamp must be UTC (or None)
+    def update_sequences(self, values, timestamp=None):
+        if not timestamp:
+            timestamp = datetime.datetime.utcnow()
+        if not self.resources:  # create a resource client instance if not already done
+            self.resources = Resources(self)
+        params = {
+            'values': json.dumps({n: str(v) for n, v in values.iteritems()}),  # make sure all values are strings
+            'timestamp': timestamp.isoformat() + ' Z',
+        }
+        self.resources.send_request_to_server('PUT', '/api/v1/resources', params)
 
     # send an email (to up to five addresses)
     def send_email(self, email_addresses, subject, body):

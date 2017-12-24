@@ -148,9 +148,9 @@ class Controller(object):
         version_build = self.VERSION
         if self.BUILD != 'unknown':
             version_build += ':' + self.BUILD
-        logging.info('------------------------' + '-' * len(version_build))
-        logging.info('Modular Science Client v' + version_build)
-        logging.info('------------------------' + '-' * len(version_build))
+        logging.info('--------------' + '-' * len(version_build))
+        logging.info('Rhizo Client v' + version_build)
+        logging.info('--------------' + '-' * len(version_build))
 
     # get build number from git refs
     # fix(soon): rework this to use the path of this file
@@ -363,8 +363,9 @@ class Controller(object):
                 while self._outgoing_messages:
                     try:
                         if self._web_socket:  # check again, in case we closed the socket in another thread
-                            message_struct = self._outgoing_messages[0]
-                            self._web_socket.send(json.dumps(message_struct, separators=(',', ':')) + '\n')
+                            (timestamp, message_struct) = self._outgoing_messages[0]
+                            if timestamp < datetime.datetime.utcnow() - datetime.timedelta(minutes=5):  # discard (don't send) messages older than 5 minutes
+                                self._web_socket.send(json.dumps(message_struct, separators=(',', ':')) + '\n')
                             self._outgoing_messages = self._outgoing_messages[1:]  # remove from queue after send
                     except (AttributeError, socket.error):
                         logging.debug('disconnected (on send); reconnecting...')
@@ -429,6 +430,7 @@ class Controller(object):
             elif type == 'set_config' or type == 'setConfig':
                 self.set_config(params)
             elif type == 'shutdown':
+                logging.info('shutting down')
                 reboot = bool(int(params.get('reboot', True)))
                 if reboot:
                     os.system('shutdown -r now')  # reboot (will not work on windows)
@@ -515,11 +517,12 @@ class Controller(object):
         self.send_message_struct_to_server(message_struct, prepend)
 
     # send a websocket message to the server
-    def send_message_struct_to_server(self, message_struct, prepend=False):
+    def send_message_struct_to_server(self, message_struct, prepend=False, timestamp=None):
+        timestamp = datetime.datetime.now()
         if prepend:
-            self._outgoing_messages = [message_struct] + self._outgoing_messages
+            self._outgoing_messages = [(timestamp, message_struct)] + self._outgoing_messages
         else:
-            self._outgoing_messages.append(message_struct)
+            self._outgoing_messages.append((timestamp, message_struct))
 
     # get a configuration setting as a message
     def config_message(self, names):

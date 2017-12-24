@@ -21,3 +21,10 @@ The controller handles core functionality: server communication, logging, and ru
 
 Extension objects are used to implement additional functionality. These objects are stored inside the controller 
 (and maintain their own reference to the controller).
+
+## Configuration
+
+The rhizo controller reads a `config.hjson` file and optionally `local.hjson` file in the current directory.
+Typically the `config.hjson` file can be stored in version control while `local.hjson` contains system-specific
+settings and items such as secret keys that should not be in version control. Entries in the `local.hjson` file
+override settings in `config.hjson`.

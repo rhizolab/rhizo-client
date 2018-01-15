@@ -116,6 +116,11 @@ class Controller(object):
         while not self.ready():
             gevent.sleep(0.1)
 
+    # add an extension directly (rather than through config)
+    def add_extension(self, name, extension):
+        self.__dict__[name] = extension
+        self._extensions.append(extension)
+
     # reload the configuration file from disk and inform the add-ons
     def reload_config(self):
         self.load_config()

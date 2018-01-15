@@ -120,6 +120,10 @@ class Controller(object):
     def add_extension(self, name, extension):
         self.__dict__[name] = extension
         self._extensions.append(extension)
+        if hasattr(extension, 'greenlets'):
+            self._greenlets += extension.greenlets()
+        if hasattr(extension, 'init'):
+            extension.init()
 
     # reload the configuration file from disk and inform the add-ons
     def reload_config(self):

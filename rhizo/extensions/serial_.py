@@ -287,11 +287,14 @@ class Serial(object):
 
         # a helper function for making sure serial messages are safe for JSON
         def remove_bad_chars(message):
-            return ''.join([c if ord(c) < 128 else 'X' for c in message])
+            return ''.join([c if (ord(c) >= 32 and ord(c) < 128) else 'X' for c in message])
 
         # check checksum
         if not '|' in message:
-            logging.warning('missing checksum: [%s]' % remove_bad_chars(message))
+            if self._serial_error_count < 100 or (self._serial_error_count % 100) == 0:
+                logging.warning('missing checksum: [%s]' % remove_bad_chars(message))
+            else:
+                logging.debug('missing checksum: [%s]' % remove_bad_chars(message))
             self._serial_error_count += 1
             self._ports[port_name].check_sum_error = True
             return
@@ -303,13 +306,16 @@ class Serial(object):
         message = message[:pipe_pos]
         calc_check_sum = util.crc16_ccitt(message)
         if calc_check_sum != check_sum:
-            logging.warning('checksum mismatch: [%s], calc: %d, remote: %d' % (remove_bad_chars(message), calc_check_sum, check_sum))
+            if self._serial_error_count < 100 or (self._serial_error_count % 100) == 0:
+                logging.warning('checksum mismatch: [%s], calc: %d, remote: %d' % (remove_bad_chars(message), calc_check_sum, check_sum))
+            else:
+                logging.debug('checksum mismatch: [%s], calc: %d, remote: %d' % (remove_bad_chars(message), calc_check_sum, check_sum))
             self._serial_error_count += 1
             self._ports[port_name].check_sum_error = True
             return
 
         # display the message
-        if not message.endswith('ack q') or not self._controller.config.get('serial', {}).get('quiet_polling', True):
+        if (not message.endswith('ack q') or not self._controller.config.serial.get('quiet_polling', True)) and self._controller.config.serial.get('log_messages', True):
             logging.debug('    %s' % message)
 
         # if requested, send to server

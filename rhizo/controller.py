@@ -146,10 +146,16 @@ class Controller(object):
         console_handler = logging.StreamHandler()
         console_handler.setLevel(logging.DEBUG if verbose else logging.INFO)
         console_handler.setFormatter(formatter)
-        max_log_file_size = self.config.get('max_log_file_size', 10000000)
-        file_handler = logging.handlers.RotatingFileHandler(log_path + '/clientLog.txt', maxBytes=max_log_file_size, backupCount=10)
-        file_handler.setLevel(logging.DEBUG)
-        file_handler.setFormatter(formatter)
+        if self.config.get('log_file_per_run', False):
+            time_str = datetime.datetime.now().strftime('%Y-%m-%d-%H%M%S')
+            file_handler = logging.FileHandler(log_path + '/' + time_str + '.txt')
+            file_handler.setLevel(5)  # log serial messages to disk
+            file_handler.setFormatter(formatter)
+        else:
+            max_log_file_size = self.config.get('max_log_file_size', 10000000)
+            file_handler = logging.handlers.RotatingFileHandler(log_path + '/client-log.txt', maxBytes=max_log_file_size, backupCount=10)
+            file_handler.setLevel(logging.DEBUG)
+            file_handler.setFormatter(formatter)
         root = logging.getLogger()
         root.addHandler(console_handler)
         root.addHandler(file_handler)

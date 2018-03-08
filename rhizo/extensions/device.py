@@ -82,7 +82,7 @@ class Device(object):
                         logging.debug('sending %s:%s' % (self._device_id, 'qr'))
                     else:
                         message = '%s:%s' % (self._device_id, command)
-                        if command != 'q' or not self._controller.config.get('serial', {}).get('quiet_polling', True):
+                        if (command != 'q' or not self._controller.config.serial.get('quiet_polling', True)) and self._controller.config.serial.get('log_messages', True):
                             logging.debug('sending %s:%s' % (self._device_id, command))
                         port.write_command(message)
                         if count > 0:

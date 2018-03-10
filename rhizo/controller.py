@@ -379,7 +379,7 @@ class Controller(object):
                     try:
                         if self._web_socket:  # check again, in case we closed the socket in another thread
                             (timestamp, message_struct) = self._outgoing_messages[0]
-                            if timestamp < datetime.datetime.utcnow() - datetime.timedelta(minutes=5):  # discard (don't send) messages older than 5 minutes
+                            if timestamp > datetime.datetime.utcnow() - datetime.timedelta(minutes=5):  # discard (don't send) messages older than 5 minutes
                                 self._web_socket.send(json.dumps(message_struct, separators=(',', ':')) + '\n')
                             self._outgoing_messages = self._outgoing_messages[1:]  # remove from queue after send
                     except (AttributeError, socket.error):
@@ -533,7 +533,7 @@ class Controller(object):
 
     # send a websocket message to the server
     def send_message_struct_to_server(self, message_struct, prepend=False, timestamp=None):
-        timestamp = datetime.datetime.now()
+        timestamp = datetime.datetime.utcnow()
         if prepend:
             self._outgoing_messages = [(timestamp, message_struct)] + self._outgoing_messages
         else:

@@ -60,7 +60,7 @@ class Device(object):
         return used
 
     # send a command to the device; waits for acknowledgement of the command
-    def send_command(self, command):
+    def send_command(self, command, timeout=120):
         serial = self._controller.serial
         if serial.is_connected():
             port = serial.port(self._port_name) if self._port_name else serial.port()
@@ -72,9 +72,12 @@ class Device(object):
                 ack_match = False
                 count = 0
                 send_q_r = False
+                start_time = None
                 while not ack_match:
                     port.check_sum_error = False  # reset this at the top of the command
-                    start_time = time.time()
+                    send_time = time.time()
+                    if not start_time:
+                        start_time = send_time
                     if send_q_r:
                         message = '%s:%s' % (self._device_id, 'qr')
                         port.write_command(message)
@@ -95,7 +98,7 @@ class Device(object):
                         break
 
                     # wait until ack or timeout
-                    while time.time() - start_time < 2:
+                    while time.time() - send_time < 2:
                         gevent.sleep(0.05)
                         if send_q_r:
                             if self._last_ack == 'qr':
@@ -105,12 +108,16 @@ class Device(object):
                             if self._last_ack == command:
                                 ack_match = True
                                 break
+                    print ack_match, port.check_sum_error
 
                     # see if we need to request a resend of messages
                     if port.check_sum_error and ack_match and self._controller.config.serial.get('enable_polling_resends', False):
                         send_q_r = True
                         ack_match = False
 
+                    # eventually give up
+                    if not ack_match and time.time() - start_time > timeout:
+                        raise Exception('timeout waiting for ack (%s:%s)' % (self._device_id, command))
             finally:
                 port.busy = False
         else:

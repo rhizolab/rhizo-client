@@ -108,7 +108,6 @@ class Device(object):
                             if self._last_ack == command:
                                 ack_match = True
                                 break
-                    print ack_match, port.check_sum_error
 
                     # see if we need to request a resend of messages
                     if port.check_sum_error and ack_match and self._controller.config.serial.get('enable_polling_resends', False):

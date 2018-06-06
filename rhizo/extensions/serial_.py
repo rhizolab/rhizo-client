@@ -1,6 +1,7 @@
-import gevent
+import time
 import logging
 import collections
+import gevent
 import serial as pyserial
 from rhizo import util
 from device import Device
@@ -44,9 +45,9 @@ class Serial(object):
         self._devices = {}
         self._ports = collections.OrderedDict()
         self._serial_error_count = 0
+        self._serial_byte_count = 0
         self._send_serial_to_server = False
         self._serial_handlers = []  # user-defined serial handlers
-        self._fast_polling = None  # fix(soon): remove this
 
     # run by controller during startup
     def init(self):
@@ -134,18 +135,6 @@ class Serial(object):
     def add_handler(self, serial_handler):
         self._serial_handlers.append(serial_handler)
 
-    # set special polling to only selected devices, to improve latency. deviceList must be a list
-    # fix(soon): remove this
-    def fast_polling(self, device_list):
-        if device_list:
-            assert type(device_list) is list, 'deviceList %r is not a list' % device_list
-            if len(device_list) == 0:
-                self._fast_polling = None
-            else:
-                self._fast_polling = device_list
-        else:
-            self._fast_polling = None
-
     # ======== our greenlets ========
 
     # runs as a greenlet that reads incoming data from serial connection(s) with device(s)
@@ -163,53 +152,23 @@ class Serial(object):
 
     # runs as a greenlet that polls devices over the serial connection
     def poll_serial_devices(self):
-        counter = 0
         while True:
-
-            if self._fast_polling:
-                if self._ports:
-                    port_name = self._ports.keys()[0]  # fix(soon): only works with one serial port
-                else:
-                    port_name = 'sim'
-                poll_devices = {id: self._devices[(port_name, id)] for id in self._fast_polling}
-            else:
-                poll_devices = {d.device_id(): d for d in self._devices.itervalues() if d._enable_polling}
-
-            dev_count = len(poll_devices)
-
-            # if no device to poll, sleep a bit (need to allow other greenlets to run)
-            if dev_count == 0:
-                gevent.sleep(0.1)
-
-            config_poll_sleep = self._controller.config.get('serial', {}).get('poll_sleep')
-            if config_poll_sleep:
-                poll_sleep = config_poll_sleep
-            elif self._fast_polling:
-                poll_sleep = 0.1
-            else:
-                if dev_count == 1:
-                    poll_sleep = 0.4
-                elif dev_count == 2:
-                    poll_sleep = 0.3
-                else:
-                    poll_sleep = 0.2
-
-            for (id, device) in poll_devices.iteritems():
-                if device._enable_polling:
-                    self.send_command(id, 'q')
-                    counter += 1
-                    if counter == dev_count or counter == 3:
-                        gevent.sleep(poll_sleep)  # poll up to three devices every one-half second
-                        counter = 0
+            cur_time = time.time()
+            for (id, dev) in self._devices.iteritems():
+                if dev._enable_polling and (dev._last_poll_time is None or dev._last_poll_time + dev._polling_interval < cur_time):
+                    dev.send_command('q')
+                    dev._last_poll_time = cur_time
+            gevent.sleep(0.055)
 
     # runs as a greenlet that periodically sends diagnostic information to the server
-    # fix(soon): decide what to do with this
     def diagnostic_monitor(self):
-        while True:
-            gevent.sleep(60)
-            if self._controller.config.get('enable_server', True) and self._controller.config.get('enable_diagnostic_sequences', False):
+        if self._controller.config.get('enable_server', True) and self._controller.config.serial.get('enable_diagnostic_sequences', False):
+            while True:
+                gevent.sleep(300)
                 self._controller.update_sequence('serial_errors', self._serial_error_count)
-            self._serial_error_count = 0
+                self._controller.update_sequence('serial_bytes', self._serial_byte_count)
+                self._serial_error_count = 0
+                self._serial_byte_count = 0
 
     # ======== other methods ========
 
@@ -284,6 +243,7 @@ class Serial(object):
 
     # process an incoming message from the serial port (from device(s))
     def process_serial_message(self, port_name, message):
+        self._serial_byte_count += len(message)
 
         # a helper function for making sure serial messages are safe for JSON
         def remove_bad_chars(message):

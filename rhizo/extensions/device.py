@@ -12,9 +12,11 @@ class Device(object):
     def __init__(self, device_id, controller, port_name = None):
         self._device_id = device_id
         self._controller = controller
+        self._port_name = port_name
         self._last_ack = ''
         self._enable_polling = False
-        self._port_name = port_name
+        self._polling_interval = 0.2  # default polling interval in seconds
+        self._last_poll_time = None  # last poll time (from time.time())
 
     # device creation method
     @classmethod

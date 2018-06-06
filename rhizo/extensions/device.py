@@ -34,8 +34,10 @@ class Device(object):
         return self._device_id
 
     # set whether this device should be polled in the main polling loop
-    def enable_polling(self, enabled):
+    def enable_polling(self, enabled, interval=None):
         self._enable_polling = enabled
+        if interval:
+            self._polling_interval = interval 
 
     # turn on/off checksum verification on the device
     def enable_checksum(self, enable):

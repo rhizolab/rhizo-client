@@ -158,7 +158,7 @@ class Serial(object):
                 if dev._enable_polling and (dev._last_poll_time is None or dev._last_poll_time + dev._polling_interval < cur_time):
                     dev.send_command('q')
                     dev._last_poll_time = cur_time
-            gevent.sleep(0.055)
+            gevent.sleep(0.055)  # sleep a bit longer than 0.05 seconds so we get closer to polling on 0.05 intervals
 
     # runs as a greenlet that periodically sends diagnostic information to the server
     def diagnostic_monitor(self):

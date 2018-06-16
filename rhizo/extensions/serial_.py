@@ -154,7 +154,7 @@ class Serial(object):
     def poll_serial_devices(self):
         while True:
             cur_time = time.time()
-            for (id, dev) in self._devices.iteritems():
+            for (id, dev) in self._devices.items():
                 if dev._enable_polling and (dev._last_poll_time is None or dev._last_poll_time + dev._polling_interval < cur_time):
                     dev.send_command('q')
                     dev._last_poll_time = cur_time

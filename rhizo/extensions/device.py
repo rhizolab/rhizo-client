@@ -124,4 +124,5 @@ class Device(object):
             finally:
                 port.busy = False
         else:
-            logging.debug('[sim] %s: %s' % (self._device_id, command))
+            if (command != 'q' or not self._controller.config.serial.get('quiet_polling', True)) and self._controller.config.serial.get('log_messages', True):
+                logging.debug('[sim] %s: %s' % (self._device_id, command))

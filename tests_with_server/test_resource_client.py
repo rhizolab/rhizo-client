@@ -6,21 +6,27 @@ from rhizo.extensions.resources import ResourceClient, ApiError
 
 # test the resource client can write a file and read it back again
 def test_resource_client_read_write_file():
-    for new_version in [False, False]:
+    for new_version in [False]:
         config = load_config('local.hjson')
         resource_client = ResourceClient(config)
         contents = 'This is a test.\n%d.\n' % random.randint(1, 1000)
         resource_client.write_file(config.server_test_path + '/test.txt', contents, new_version = new_version)
-        assert contents == resource_client.read_file(config.server_test_path + '/test.txt')
+        server_contents = resource_client.read_file(config.server_test_path + '/test.txt')
+        print contents, server_contents
+        assert contents == server_contents
 
 
 # test the resource client can write a file and read it back again
 def test_resource_client_read_write_large_file():
-    config = load_config('local.hjson')
-    resource_client = ResourceClient(config)
-    contents = ('This is a test.\n%d.\n' % random.randint(1, 1000)) * 1000
-    resource_client.write_file(config.server_test_path + '/testLarge.txt', contents)
-    assert contents == resource_client.read_file(config.server_test_path + '/testLarge.txt')
+    for binary in [False, True]:
+        config = load_config('local.hjson')
+        resource_client = ResourceClient(config)
+        if binary:
+            contents = bytearray(range(256) * 100)
+        else:
+            contents = ('This is a test.\n%d.\n' % random.randint(1, 1000)) * 1000
+        resource_client.write_file(config.server_test_path + '/testLarge.txt', contents)
+        assert contents == resource_client.read_file(config.server_test_path + '/testLarge.txt')
 
 
 # test the resource client can write a file and read it back again
@@ -82,4 +88,4 @@ def test_resource_client_send_message():
 
 # if run as a top-level script
 if __name__ == '__main__':
-    test_resource_client_create_folder()
+    test_resource_client_read_write_large_file()

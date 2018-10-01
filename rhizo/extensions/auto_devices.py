@@ -171,6 +171,8 @@ class AutoDevices(object):
 
     # process incoming websocket message
     def process_message(self, type, params):
+        if not self._controller.config.get('enable_auto_devices_messages', True):  # allow disabling this function; planning to remove this entire module in future
+            return (False, '')
         message_used = True
         response_message = None
 

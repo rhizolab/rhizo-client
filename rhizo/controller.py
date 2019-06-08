@@ -277,6 +277,7 @@ class Controller(object):
             self.store_local_sequence_value(sequence_name, value)
 
     # update multiple sequences; timestamp must be UTC (or None)
+    # values should be a dictionary of sequences
     def update_sequences(self, values, timestamp=None):
         if not timestamp:
             timestamp = datetime.datetime.utcnow()

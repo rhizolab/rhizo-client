@@ -46,6 +46,7 @@ class Serial(object):
         self._ports = collections.OrderedDict()
         self._serial_error_count = 0
         self._serial_byte_count = 0
+        self._poll_count = 0
         self._send_serial_to_server = False
         self._serial_handlers = []  # user-defined serial handlers
 
@@ -158,6 +159,7 @@ class Serial(object):
                 if dev._enable_polling and (dev._last_poll_time is None or dev._last_poll_time + dev._polling_interval < cur_time):
                     dev.send_command('q')
                     dev._last_poll_time = cur_time
+                    self._poll_count += 1
             gevent.sleep(0.055)  # sleep a bit longer than 0.05 seconds so we get closer to polling on 0.05 intervals
 
     # runs as a greenlet that periodically sends diagnostic information to the server
@@ -167,8 +169,10 @@ class Serial(object):
                 gevent.sleep(300)
                 self._controller.update_sequence('serial_errors', self._serial_error_count)
                 self._controller.update_sequence('serial_bytes', self._serial_byte_count)
+                self._controller.update_sequence('serial_polls', self._poll_count)
                 self._serial_error_count = 0
                 self._serial_byte_count = 0
+                self._poll_count = 0
 
     # ======== other methods ========
 
@@ -322,4 +326,4 @@ class Serial(object):
 
         # display message for unused serial message
         if not used:
-            logging.debug('unrecognized message received from serial')
+            logging.debug('unrecognized message received from serial (%s)' % message)

@@ -13,6 +13,7 @@ def test_resource_client_read_write_file():
         resource_client.write_file(config.server_test_path + '/test.txt', contents, new_version = new_version)
         server_contents = resource_client.read_file(config.server_test_path + '/test.txt')
         print contents, server_contents
+        print server_contents[2:].decode('hex')
         assert contents == server_contents
 
 
@@ -46,15 +47,15 @@ def test_resource_client_create_folder():
     assert resource_client.file_exists(path) == True
 
 
-# test that the result client and update and read a sequence value
+# test that the resource client can update and read a sequence value
 def test_resource_client_read_write_sequence():
     for new_version in [False, False]:
         config = load_config('local.hjson')
         resource_client = ResourceClient(config)
-        resource_client.write_file(config.server_test_path + '/status', 'ok', new_version = new_version)
-        assert 'ok' == resource_client.read_file(config.server_test_path + '/status')
-        resource_client.write_file(config.server_test_path + '/status', 'test', new_version = new_version)
-        assert 'test' == resource_client.read_file(config.server_test_path + '/status')
+        resource_client.write_file(config.server_test_path + '/test-text-seq', 'ok', new_version = new_version)
+        assert 'ok' == resource_client.read_file(config.server_test_path + '/test-text-seq')
+        resource_client.write_file(config.server_test_path + '/test-text-seq', 'test', new_version = new_version)
+        assert 'test' == resource_client.read_file(config.server_test_path + '/test-text-seq')
 
 
 # test that the resource client can be used to send a message
@@ -88,4 +89,4 @@ def test_resource_client_send_message():
 
 # if run as a top-level script
 if __name__ == '__main__':
-    test_resource_client_read_write_large_file()
+    test_resource_client_read_write_file()

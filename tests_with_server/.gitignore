@@ -2,3 +2,4 @@ local.hjson
 logs
 .cache
 __pycache__
+.pytest_cache

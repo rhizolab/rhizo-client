@@ -69,7 +69,7 @@ class Device(object):
         if serial.is_connected():
             port = serial.port(self._port_name) if self._port_name else serial.port()
             while port.busy:  # we don't want to interleave serial messages
-                gevent.sleep(0.1)
+                gevent.sleep(0.02)
             try:
                 port.busy = True
                 self._last_ack = ''
@@ -103,7 +103,7 @@ class Device(object):
 
                     # wait until ack or timeout
                     while time.time() - send_time < 2:
-                        gevent.sleep(0.05)
+                        gevent.sleep(0.02)
                         if send_q_r:
                             if self._last_ack == 'qr':
                                 ack_match = True

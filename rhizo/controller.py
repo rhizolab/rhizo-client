@@ -495,7 +495,7 @@ class Controller(object):
             logging.debug('opened websocket connection to server')
         except Exception as e:
             logging.debug(str(e))
-            logging.warning('error connecting to server')
+            logging.warning('error connecting to websocket server')
             ws = None
         return ws
 

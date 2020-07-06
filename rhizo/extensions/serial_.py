@@ -143,7 +143,7 @@ class Serial(object):
     def serial_listener(self):
         while True:
             received_message = False
-            for port_name, port in self._ports.iteritems():
+            for port_name, port in self._ports.items():
                 message = port.read_message()
                 if message:
                     gevent.spawn(self.process_serial_message, port_name, message)
@@ -213,7 +213,7 @@ class Serial(object):
     def close_port(self, port_name):
         self._ports[port_name]._connection.close()
         del self._ports[port_name]
-        self._devices = {dk: d for dk, d in self._devices.iteritems() if d._port_name != port_name}
+        self._devices = {dk: d for dk, d in self._devices.items() if d._port_name != port_name}
 
     # reload settings after a change to the config file
     def reload_config(self):

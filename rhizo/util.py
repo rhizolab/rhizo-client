@@ -98,7 +98,7 @@ def crc16_update(crc, data):
 
 # build an auth_code string by hashing a secret key
 def build_auth_code(secret_key):
-    nonce = base64.b64encode(os.urandom(32))
-    key_hash = base64.b64encode(hashlib.sha512(nonce + ';' + secret_key).digest())
+    nonce = base64.b64encode(os.urandom(32)).decode()
+    key_hash = base64.b64encode(hashlib.sha512((nonce + ';' + secret_key).encode()).digest()).decode()
     key_part = secret_key[:3] + secret_key[-3:]
     return key_part + ';' + nonce + ';' + key_hash

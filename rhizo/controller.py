@@ -20,9 +20,9 @@ from ws4py.client.geventclient import WebSocketClient
 
 
 # our own imports
-import config
-import util
-from extensions.resources import Resources  # fix(soon): remove this and require add as extension?
+from . import config
+from . import util
+from .extensions.resources import Resources  # fix(soon): remove this and require add as extension?
 
 
 # A Controller object contains and manages various communication and control threads.
@@ -284,7 +284,7 @@ class Controller(object):
         if not self.resources:  # create a resource client instance if not already done
             self.resources = Resources(self)
         params = {
-            'values': json.dumps({n: str(v) for n, v in values.iteritems()}),  # make sure all values are strings
+            'values': json.dumps({n: str(v) for n, v in values.items()}),  # make sure all values are strings
             'timestamp': timestamp.isoformat() + ' Z',
         }
         self.resources.send_request_to_server('PUT', '/api/v1/resources', params)
@@ -488,7 +488,7 @@ class Controller(object):
         else:
             user_name = self.VERSION + '.' + self.BUILD  # send client version as user name
             password = self.config.secret_key  # send secret key as password
-            headers = [('Authorization', 'Basic %s' % base64.b64encode('%s:%s' % (user_name, password)))]
+            headers = [('Authorization', 'Basic %s' % base64.b64encode(('%s:%s' % (user_name, password)).encode()).decode())]
         ws = WebSocketClient(protocol + '://' + self.config.server_name + '/api/v1/websocket', protocols=['http-only'], headers=headers)
         try:
             ws.connect()
@@ -572,7 +572,6 @@ class Controller(object):
         # initialize resource client so we can use its request function
         if not self.resources:
             self.config.secret_key = 'x'  # set a temp secret key since resource client expects one
-            self.config.secret_key = 'x'
             self.resources = Resources(self)
 
         # request PIN
@@ -617,12 +616,12 @@ class Controller(object):
                     found = True
                 output_file.write(line)
             if not found:
-                output_file.write(new_entry)  # if not, append it
+                output_file.write('\n' + new_entry)  # if not, append it
+            output_file.close()
         else:
             open(local_config_file_name, 'w').write(new_entry)
 
         # update in-memory config
-        self.config.secret_key = secret_key
         self.config.secret_key = secret_key
         self.resources._secret_key = secret_key
 

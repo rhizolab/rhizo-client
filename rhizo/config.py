@@ -1,7 +1,7 @@
 import json
-import hjson
-import util
 import logging  # fix(clean): remove this after remove item_as_list
+import hjson
+from . import util
 
 
 ## The Config class represents the contents of a configuration file.
@@ -11,7 +11,7 @@ class Config(dict):
     def __init__(self, entries = None):  # can't default entries to {} since that would be shared between multiple configs
         dict.__init__(self)
         if entries:
-            for (key, value) in entries.iteritems():
+            for (key, value) in entries.items():
                 if True:
                     if isinstance(value, dict) and not isinstance(value, Config):
                         self[key] = Config(value)

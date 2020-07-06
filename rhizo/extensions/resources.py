@@ -3,9 +3,12 @@ import gevent
 import base64
 import json
 import urllib
-import httplib
+try:
+    from httplib import HTTPConnection, HTTPSConnection
+except ModuleNotFoundError:
+    from http.client import HTTPConnection, HTTPSConnection
 import logging
-import cStringIO
+from io import StringIO
 from rhizo.util import build_auth_code
 
 
@@ -22,11 +25,11 @@ class ApiError(Exception):
 # the WriteFileWrapper allows creating a remote file that behaves like a normal python file object (currently just implementing write() and close())
 class WriteFileWrapper(object):
 
-    # creates a buffer (cStringIO instance) that will store data before it is sent to the server
+    # creates a buffer (StringIO instance) that will store data before it is sent to the server
     def __init__(self, full_server_file_name, resource_client):
         self._full_server_file_name = full_server_file_name
         self._resource_client = resource_client
-        self._file_obj = cStringIO.StringIO()
+        self._file_obj = StringIO()
         self._closed = False
 
     # write data into the buffer
@@ -103,7 +106,7 @@ class ResourceClient(object):
         if 'w' in mode:
             return WriteFileWrapper(file_name, self)
         else:
-            return cStringIO.StringIO(self.read_file(file_name))
+            return StringIO(self.read_file(file_name))
 
     # read a file from the server
     def read_file(self, file_path):
@@ -206,7 +209,7 @@ class ResourceClient(object):
             else:
                 user_name = 'resource_client'
             password = self._secret_key  # send secret key as password
-            basic_auth = base64.b64encode('%s:%s' % (user_name, password))
+            basic_auth = base64.b64encode(('%s:%s' % (user_name, password)).encode('utf-8'))
 
         # make request and retry if there is an exception or server error
         while True:
@@ -229,7 +232,7 @@ class ResourceClient(object):
                 raise ApiError(status, reason, data)
 
             # try again in 10 seconds
-            logging.debug('retrying %s %s; error: %s' % (method, path, err_text))
+            logging.info('retrying %s %s; error: %s' % (method, path, err_text))
             gevent.sleep(10)
             retry_count += 1
 
@@ -252,11 +255,14 @@ def send_request(server, method, path, params, secure = True, accept_type = 'tex
     }
     if basic_auth:
         headers['Authorization'] = 'Basic %s' % basic_auth
-    params = urllib.urlencode(params)
+    try:
+        params = urllib.urlencode(params)
+    except:  # python 3
+        params = urllib.parse.urlencode(params)
     if secure:
-        conn = httplib.HTTPSConnection(server)
+        conn = HTTPSConnection(server)
     else:
-        conn = httplib.HTTPConnection(server)
+        conn = HTTPConnection(server)
     conn.request(method, path, params, headers)
     response = conn.getresponse()
     data = response.read()

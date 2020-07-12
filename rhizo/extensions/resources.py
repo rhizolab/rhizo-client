@@ -209,7 +209,7 @@ class ResourceClient(object):
             else:
                 user_name = 'resource_client'
             password = self._secret_key  # send secret key as password
-            basic_auth = base64.b64encode(('%s:%s' % (user_name, password)).encode('utf-8'))
+            basic_auth = base64.b64encode(('%s:%s' % (user_name, password)).encode('utf-8')).decode()
 
         # make request and retry if there is an exception or server error
         while True:

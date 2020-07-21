@@ -22,6 +22,7 @@ from ws4py.client.geventclient import WebSocketClient
 # our own imports
 from . import config
 from . import util
+from sequence import SequenceManager
 from .extensions.resources import Resources  # fix(soon): remove this and require add as extension?
 
 
@@ -46,6 +47,7 @@ class Controller(object):
         self._greenlets = []
         self._path_on_server = None
         self.resources = None
+        self.sequence = SequenceManager(self)
 
         # process command arguments
         parser = OptionParser()

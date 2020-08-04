@@ -85,6 +85,7 @@ class ResourceClient(object):
     # returns boolean indicating whether file exists (or raises ApiError on permission failure or other error)
     def file_exists(self, file_name):
         assert file_name.startswith('/')
+        file_name = file_name.replace(' ', '%20')  # fix(soon): use proper url encoding function instead
         try:
             self.send_request_to_server('GET', '/api/v1/resources' + file_name, {'meta': 1})
         except ApiError as e:

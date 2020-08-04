@@ -22,7 +22,7 @@ from ws4py.client.geventclient import WebSocketClient
 # our own imports
 from . import config
 from . import util
-from sequence import SequenceManager
+from .sequence import SequenceManager
 from .extensions.resources import Resources  # fix(soon): remove this and require add as extension?
 
 

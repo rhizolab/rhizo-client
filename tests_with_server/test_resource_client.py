@@ -11,9 +11,7 @@ def test_resource_client_read_write_file():
         resource_client = ResourceClient(config)
         contents = 'This is a test.\n%d.\n' % random.randint(1, 1000)
         resource_client.write_file(config.server_test_path + '/test.txt', contents, new_version = new_version)
-        server_contents = resource_client.read_file(config.server_test_path + '/test.txt')
-        print contents, server_contents
-        print server_contents[2:].decode('hex')
+        server_contents = resource_client.read_file(config.server_test_path + '/test.txt').decode()
         assert contents == server_contents
 
 
@@ -23,11 +21,14 @@ def test_resource_client_read_write_large_file():
         config = load_config('local.hjson')
         resource_client = ResourceClient(config)
         if binary:
-            contents = bytearray(range(256) * 100)
+            contents = bytearray(list(range(256)) * 100)
         else:
             contents = ('This is a test.\n%d.\n' % random.randint(1, 1000)) * 1000
         resource_client.write_file(config.server_test_path + '/testLarge.txt', contents)
-        assert contents == resource_client.read_file(config.server_test_path + '/testLarge.txt')
+        data = resource_client.read_file(config.server_test_path + '/testLarge.txt')
+        if not binary:
+            data = data.decode()
+        assert contents == data
 
 
 # test the resource client can write a file and read it back again
@@ -53,9 +54,9 @@ def test_resource_client_read_write_sequence():
         config = load_config('local.hjson')
         resource_client = ResourceClient(config)
         resource_client.write_file(config.server_test_path + '/test-text-seq', 'ok', new_version = new_version)
-        assert 'ok' == resource_client.read_file(config.server_test_path + '/test-text-seq')
+        assert 'ok' == resource_client.read_file(config.server_test_path + '/test-text-seq').decode()
         resource_client.write_file(config.server_test_path + '/test-text-seq', 'test', new_version = new_version)
-        assert 'test' == resource_client.read_file(config.server_test_path + '/test-text-seq')
+        assert 'test' == resource_client.read_file(config.server_test_path + '/test-text-seq').decode()
 
 
 # test that the resource client can be used to send a message

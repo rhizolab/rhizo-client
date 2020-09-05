@@ -22,11 +22,11 @@ for i in range(controller_count):
         os.mkdir(name)
 
     # create server folder
-    server_path = c.config.server_test_path + '/' + name
+    server_path = c.path_on_server() + '/' + name
     if not c.resources.file_exists(server_path):
         print('creating on server: %s' % server_path)
         params = {
-            'parent': c.config.server_test_path,
+            'parent': c.path_on_server(),
             'name': name,
             'type': 12,
         }

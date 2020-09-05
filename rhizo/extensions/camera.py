@@ -1,7 +1,7 @@
 import random
 import base64
 import logging
-import cStringIO
+from io import BytesIO
 import gevent
 from PIL import Image, ImageDraw
 
@@ -128,7 +128,7 @@ class PiCameraDevice(object):
         from picamera import PiCameraRuntimeError
         while True:
             try:
-                stream = cStringIO.StringIO()
+                stream = BytesIO()
                 self.camera.capture(stream, format='jpeg', quality=self.jpeg_quality)
                 break
             except PiCameraRuntimeError:
@@ -192,7 +192,7 @@ class Camera(object):
         if not config:
             config = self._controller.config.camera
         type = config.type
-        print 'adding', type
+        print('adding camera: %s' % type)
         if type == 'sim':
             self.device = SimCameraDevice(config)
         elif type == 'pi':
@@ -211,7 +211,7 @@ def encode_image(image, format='JPEG'):
 
 # get image data as a jpeg (or other format) image file (raw binary data)
 def image_data(image, format='JPEG'):
-    mem_file = cStringIO.StringIO()
+    mem_file = BytesIO()
     image.save(mem_file, format=format)
     data = mem_file.getvalue()
     mem_file.close()

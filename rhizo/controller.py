@@ -269,11 +269,15 @@ class Controller(object):
                 if not self.resources:  # create a resource client instance if not already done
                     self.resources = Resources(self)
                 value = str(value)  # write_file currently expects string values
+                i = 0
                 while True:  # repeat until verified that value is written
                     self.resources.write_file(sequence_name, value)
-                    server_value = self.resources.read_file(sequence_name)
+                    server_value = self.resources.read_file(sequence_name).decode()
                     if value == server_value:
                         break
+                    i += 1
+                    if i == 10:
+                        logging.warning('unable to verify sequence update; retrying...')
                     gevent.sleep(0.5)
         if self.config.get('enable_local_sequence_storage', False):
             self.store_local_sequence_value(sequence_name, value)

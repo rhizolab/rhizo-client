@@ -109,7 +109,7 @@ class ResourceClient(object):
         else:
             return StringIO(self.read_file(file_name))
 
-    # read a file from the server
+    # read a file from the server; returns data as bytes; if reading string from text file, use .decode() on returned value
     def read_file(self, file_path):
         assert file_path.startswith('/')
         data = None
@@ -147,10 +147,14 @@ class ResourceClient(object):
         }
         self.send_request_to_server('POST', '/api/v1/resources', params)
 
-    # write a file to the server
+    # write a file to the server; contents can be string or bytes
     def write_file(self, file_path, contents, creation_timestamp = None, modification_timestamp = None, new_version = False):
+        try:
+            data = base64.b64encode(contents)  # handle bytes
+        except:
+            data = base64.b64encode(contents.encode())  # handle string
         file_info = {
-            'data': base64.b64encode(contents)
+            'data': data
         }
         if creation_timestamp:
             file_info['creationTimestamp'] = creation_timestamp.isoformat() + ' Z'

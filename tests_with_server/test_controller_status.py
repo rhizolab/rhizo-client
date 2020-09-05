@@ -33,7 +33,7 @@ def test_controller_status():
     print('own parent: %s' % own_parent)
     print('own name: %s' % own_name)
     print('setting status: %s' % test_str)
-    c.resources.send_request_to_server('PUT',  '/api/v1/resources' + own_path, {'status': json.dumps({'foo': test_str})})
+    c.resources.send_request_to_server('PUT', '/api/v1/resources' + own_path, {'status': json.dumps({'foo': test_str})})
     file_list = c.resources.list_files(own_parent, type='controller_folder')  # get list of controllers
     for file_info in file_list:
         if file_info['name'] == own_name:

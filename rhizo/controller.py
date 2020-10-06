@@ -15,6 +15,7 @@ from optparse import OptionParser
 
 
 # external imports
+import psutil
 import gevent
 from ws4py.client.geventclient import WebSocketClient
 
@@ -220,6 +221,7 @@ class Controller(object):
             greenlets.append(gevent.spawn(self.web_socket_listener))
             greenlets.append(gevent.spawn(self.web_socket_sender))
             greenlets.append(gevent.spawn(self.ping_web_socket))
+            greenlets.append(gevent.spawn(self.system_monitor))
         for extension in self._extensions:
             if hasattr(extension, 'greenlets'):
                 greenlets += extension.greenlets()
@@ -283,7 +285,7 @@ class Controller(object):
             self.store_local_sequence_value(sequence_name, value)
 
     # update multiple sequences; timestamp must be UTC (or None)
-    # values should be a dictionary of sequences
+    # values should be a dictionary of sequence values by path (for now assuming absolute sequence paths)
     def update_sequences(self, values, timestamp=None):
         if not timestamp:
             timestamp = datetime.datetime.utcnow()
@@ -412,6 +414,18 @@ class Controller(object):
             gevent.sleep(45)
             if self._web_socket:
                 self.send_message('ping', {})
+
+    # a greenlet that monitors system status (disk and CPU usage)
+    def system_monitor(self):
+        gevent.sleep(15)  # do a short sleep on startup
+        while True:
+            processor_usage = psutil.cpu_percent()
+            disk_usage = psutil.disk_usage('/').percent
+            status_folder = self.path_on_server() + '/status'
+            seq_values = {status_folder + '/processor_usage': processor_usage, status_folder + '/disk_usage': disk_usage}
+            self.update_sequences(seq_values)
+            logging.info('processor usage: %.1f%%, disk usage: %.1f%%' % (processor_usage, disk_usage))
+            gevent.sleep(30 * 60)  # sleep for 30 minutes
 
     # monitors the keyboard and e-stops the script
     def keyboard_monitor(self):

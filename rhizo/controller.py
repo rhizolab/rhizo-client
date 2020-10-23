@@ -33,7 +33,7 @@ class Controller(object):
     # ======== initialization ========
 
     # prepare internal data
-    def __init__(self):
+    def __init__(self, configuration=None):
 
         # initialize member variables
         self.config = None  # publicly accessible
@@ -56,11 +56,15 @@ class Controller(object):
         parser.add_option('-v', '--verbose', dest='verbose', action='store_true', default=False)
         (options, args) = parser.parse_args()
 
-        # load config file
-        self._config_relative_file_name = options.config_file_name
-        self.load_config()
-        if not self.config:
-            sys.exit(1)
+        if configuration:
+            self.config = config.Config(configuration)
+            self._config_relative_file_name = '(passed by caller)'
+        else:
+            # load config file
+            self._config_relative_file_name = options.config_file_name
+            self.load_config()
+            if not self.config:
+                sys.exit(1)
 
         # initialize other controller attributes
         if self.config.get('enable_keyboard_monitor', False):

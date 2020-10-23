@@ -4,7 +4,6 @@ import collections
 import gevent
 import serial as pyserial
 from rhizo import util
-from device import Device
 
 
 # The Port object manages a connection a single serial port.
@@ -87,7 +86,7 @@ class Serial(object):
         # temp handle device without port
         if not device.port_name():
             if self._ports:
-                device._port_name = self._ports.keys()[0]
+                device._port_name = list(self._ports.keys())[0]
             else:
                 device._port_name = 'sim'
         if (device.port_name(), device.device_id()) in self._devices:
@@ -123,7 +122,7 @@ class Serial(object):
             for port in self._ports:
                 self._ports[port].write_command(message)
         if self._ports:
-            port_name = self._ports.keys()[0]  # note: only works with single serial port
+            port_name = list(self._ports.keys())[0]  # note: only works with single serial port
         else:
             port_name = 'sim'
         device_key = (port_name, device_id)

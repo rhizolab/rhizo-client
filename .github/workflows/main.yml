@@ -1,0 +1,49 @@
+name: rhizo
+
+on: [push, pull_request]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [2.7, 3.6, 3.7, 3.8, 3.9]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Cache venv contents
+      id: cache-venv
+      uses: actions/cache@v2
+      with:
+        path: .venv
+        key: ${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/requirements*.txt') }}
+
+    - name: Install dependencies into venv
+      if: steps.cache-venv.outputs.cache-hit != 'true'
+      run: |
+        if [ "${{ matrix.python-version }}" = "2.7" ]; then
+          pip install virtualenv
+          virtualenv .venv
+        else
+          python -m venv .venv
+        fi
+        source .venv/bin/activate
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r rhizo/extensions/requirements.txt
+        pip install -r tests/requirements.txt
+
+    - name: Prep config
+      run: |
+        cp sample_config.hjson config.hjson
+
+    - name: Test with pytest
+      run: |
+        .venv/bin/pytest tests

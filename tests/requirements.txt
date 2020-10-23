@@ -1,0 +1,2 @@
+pathlib # Needed for Python 2
+pytest

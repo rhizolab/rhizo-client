@@ -1,8 +1,7 @@
-import logging
-from rhizo.main import c
+from rhizo.controller import Controller
 from rhizo.util import crc16_ccitt
-from rhizo.extensions.serial_ import Port
 from rhizo.extensions.device import Device
+from rhizo.extensions.serial_ import Port
 
 
 # a mock serial connection for testing the serial extension
@@ -44,10 +43,10 @@ class MockSerialConnection(object):
 
 
 # basic test of serial using mock serial port
-def test_serial():
-
+def test_serial_polling():
     # open a mock serial port
     mock_conn = MockSerialConnection()
+    c = Controller({'extensions': ['serial'], 'enable_server': False, 'serial': {'polling': True}})
     c.serial._ports['mock'] = Port(mock_conn)
 
     # create a test device
@@ -59,8 +58,3 @@ def test_serial():
     # wait until polled
     while not mock_conn.polled:
         c.sleep(0.1)
-
-
-# if run as a top-level script
-if __name__ == '__main__':
-    test_serial()

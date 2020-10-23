@@ -1,3 +1,5 @@
 *.py[cod]
 config.hjson
 local.hjson
+logs
+.venv

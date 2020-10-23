@@ -1,1 +1,1 @@
-server_name example.com
+server_name: example.com

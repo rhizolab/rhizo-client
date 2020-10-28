@@ -1,6 +1,7 @@
 import json
 import logging  # fix(clean): remove this after remove item_as_list
 import hjson
+import os
 from . import util
 
 
@@ -60,8 +61,19 @@ class Config(dict):
         self[name] = value
 
 
-# load a configuration file (either space-delimited simple text format or .json file)
-def load_config(config_file_name):
+def load_config(config_file_name, use_environ=True):
+    """Load a configuration file.
+
+    The file may be one of:
+
+    - JSON (filename must end with ".json")
+    - HJSON (filename must end with ".hjson")
+    - Space-delimited simple text format
+
+    If use_environ is True, values from the config file will be overridden by values from
+    environment variables whose names start with RHIZO_, e.g., RHIZO_SERVER_NAME will set
+    the server_name config value. Environment variable values are always parsed as HJSON.
+    """
     config_dict = {}
     if config_file_name.endswith('.json'):
         input_file = open(config_file_name)
@@ -101,6 +113,15 @@ def load_config(config_file_name):
                 # or add to main config
                 else:
                     config_dict[name] = value
+
+    # allow settings to be supplied or overridden with environment variables
+    if use_environ:
+        from_environ = {}
+        prefix = 'RHIZO_'
+        for (name, value) in os.environ.items():
+            if name[:len(prefix)] == prefix:
+                config_dict[name[len(prefix):].lower()] = hjson.loads(value)
+
     return Config(config_dict)
 
 

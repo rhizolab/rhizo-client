@@ -5,7 +5,7 @@ from rhizo.extensions.resources import ResourceClient
 
 # test create, update, read, delete folder resource
 def test_folder():
-    config = load_config('local.hjson')
+    config = load_config('local.yaml')
     resource_client = ResourceClient(config)
 
 

@@ -1,4 +1,3 @@
 output_path: /foo/test
-sub_config: {
-	b: 3
-}
+sub_config:
+    b: 3

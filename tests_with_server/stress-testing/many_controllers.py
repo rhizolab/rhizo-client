@@ -42,7 +42,7 @@ for i in range(controller_count):
         secret_key = data['secret_key']
 
         # create config file
-        config_file_name = name + '/config.hjson'
+        config_file_name = name + '/config.yaml'
         open(config_file_name, 'w').write('server_name: %s\nsecret_key: %s\n' % (c.config.server_name, secret_key))
 
 

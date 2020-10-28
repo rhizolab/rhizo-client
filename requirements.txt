@@ -1,4 +1,4 @@
 gevent
 ws4py
-hjson
 psutil
+pyyaml==5.3.1

@@ -17,11 +17,6 @@ def _load_test_config(filename, use_environ=False):
     return load_config(str(path), use_environ)
 
 
-def test_text_config():
-    config = _load_test_config('sample_config.txt')
-    check_config(config)
-
-
 def test_environment_config():
     os.environ['RHIZO_SUB_CONFIG'] = 'a: override\nb: 3'
     os.environ['RHIZO_OTHER_SETTING'] = 'from_env'
@@ -42,14 +37,21 @@ def test_json_config():
     check_config(config)
 
 
-def test_hjson_config():
-    config = _load_test_config('sample_config.hjson')
+def test_yaml_config():
+    config = _load_test_config('sample_config.yaml')
     check_config(config)
 
 
+def test_get_with_default():
+    config = _load_test_config('sample_config.yaml')
+    assert config.get('nonexistent') is None
+    assert config.get('nonexistent', 'value') == 'value'
+    assert config.get('nonexistent', []) == []
+
+
 def test_config_update():
-    config = _load_test_config('sample_config.hjson')
-    config.update(_load_test_config('update.hjson'))
+    config = _load_test_config('sample_config.yaml')
+    config.update(_load_test_config('update.yaml'))
     assert config.output_path == '/foo/test'
     assert config.sub_config.a == 'test'
     assert config.sub_config.b == 3

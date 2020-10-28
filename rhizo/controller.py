@@ -52,7 +52,7 @@ class Controller(object):
 
         # process command arguments
         parser = OptionParser()
-        parser.add_option('-c', '--config-file-name', dest='config_file_name', default='config.hjson')
+        parser.add_option('-c', '--config-file-name', dest='config_file_name', default='config.yaml')
         parser.add_option('-v', '--verbose', dest='verbose', action='store_true', default=False)
         (options, args) = parser.parse_args()
 
@@ -86,7 +86,7 @@ class Controller(object):
 
         # initialize extensions modules
         if 'extensions' in self.config:
-            extension_names = self.config.item_as_list('extensions', [])
+            extension_names = self.config.get('extensions', [])
             for extension_name in extension_names:
                 class_name = underscores_to_camel(extension_name)
                 class_name = class_name[0].upper() + class_name[1:]
@@ -201,7 +201,7 @@ class Controller(object):
 
         # check for local config
         config_dir = os.path.dirname(config_file_name)
-        local_config_file_name = (config_dir + '/' if config_dir else '') + 'local.hjson'
+        local_config_file_name = (config_dir + '/' if config_dir else '') + 'local.yaml'
         if os.access(local_config_file_name, os.F_OK):
             local_config = config.load_config(local_config_file_name)
             self.config.update(local_config)
@@ -341,7 +341,7 @@ class Controller(object):
             logging.error(message)
         if exception:
             logging.error(str(exception))
-        error_recipients = self.config.item_as_list('error_recipients', [])
+        error_recipients = self.config.get('error_recipients', [])
         if error_recipients:
             subject = self.config.get('error_subject', 'system error')
             body = self.config.get('error_body', '').strip()
@@ -624,24 +624,23 @@ class Controller(object):
         logging.info('received key for controller: %s' % response['controller_path'])
         logging.debug('key prefix: %s, key suffix: %s' % (secret_key[:3], secret_key[-3:]))
 
-        # save key in local.hjson
-        # fix(later): handle case that someone is storing secret_key in a file other than local.hjson?
+        # save key in local.yaml
+        # fix(later): handle case that someone is storing secret_key in a file other than local.yaml?
         config_dir = os.path.dirname(self._config_relative_file_name)
-        local_config_file_name = (config_dir + '/' if config_dir else '') + 'local.hjson'
+        local_config_file_name = (config_dir + '/' if config_dir else '') + 'local.yaml'
         new_entry = 'secret_key: %s\n' % secret_key
         if os.path.exists(local_config_file_name):
             with open(local_config_file_name) as input_file:
                 lines = input_file.readlines()
-            output_file = open(local_config_file_name, 'w')
-            found = False
-            for line in lines:
-                if line.strip().startswith('secret_key'):  # if file already has secret key, overwrite it
-                    line = new_entry
-                    found = True
-                output_file.write(line)
-            if not found:
-                output_file.write('\n' + new_entry)  # if not, append it
-            output_file.close()
+            with open(local_config_file_name, 'w') as output_file:
+                found = False
+                for line in lines:
+                    if line.strip().startswith('secret_key'):  # if file already has secret key, overwrite it
+                        line = new_entry
+                        found = True
+                    output_file.write(line)
+                if not found:
+                    output_file.write('\n' + new_entry)  # if not, append it
         else:
             open(local_config_file_name, 'w').write(new_entry)
 

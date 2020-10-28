@@ -1,4 +1,4 @@
-local.hjson
+local.yaml
 logs
 .cache
 __pycache__

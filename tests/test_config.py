@@ -27,7 +27,7 @@ def test_environment_config():
     os.environ['RHIZO_OTHER_SETTING'] = 'from_env'
     config = _load_test_config('sample_config.json', True)
 
-    # Not overridden in environmene
+    # Not overridden in environment
     assert config.output_path == '/foo/bar'
     # Overridden in environment; dict value in environment
     assert config.sub_config == { "a": "override", "b": 3 }

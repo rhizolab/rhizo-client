@@ -1,7 +1,7 @@
-import json
 import logging  # fix(clean): remove this after remove item_as_list
-import hjson
 import os
+import yaml
+
 from . import util
 
 
@@ -38,16 +38,6 @@ class Config(dict):
             raise ConfigEntryNotFound(name)
         return self[name]
 
-    # retrieve an item as a list
-    def item_as_list(self, name, default = '[noDefault]'):
-        if default == '[noDefault]':
-            return as_list(self[name])
-        else:
-            if name in self:
-                return as_list(self[name])
-            else:
-                return default
-
     # add/overwrite entries with entries from another config
     def update(self, config):
         for (key, new_value) in config.items():
@@ -62,76 +52,23 @@ class Config(dict):
 
 
 def load_config(config_file_name, use_environ=True):
-    """Load a configuration file.
-
-    The file may be one of:
-
-    - JSON (filename must end with ".json")
-    - HJSON (filename must end with ".hjson")
-    - Space-delimited simple text format
+    """Load a YAML or JSON configuration file.
 
     If use_environ is True, values from the config file will be overridden by values from
     environment variables whose names start with RHIZO_, e.g., RHIZO_SERVER_NAME will set
-    the server_name config value. Environment variable values are always parsed as HJSON.
+    the server_name config value. Environment variable values are always parsed as YAML.
     """
-    config_dict = {}
-    if config_file_name.endswith('.json'):
-        input_file = open(config_file_name)
-        config_dict = json.loads(input_file.read())
-    elif config_file_name.endswith('.hjson'):
-        input_file = open(config_file_name)
-        config_dict = hjson.loads(input_file.read())
-    else:
-        input_file = open(config_file_name)
-        for line in input_file:
-            hash_pos = line.find('  #')
-            if hash_pos >= 0:
-                line = line[:hash_pos].strip()
-            parts = line.split(None, 1)
-            if parts:
-
-                # get the name and value
-                name = parts[0]
-                value = parts[1].strip() if len(parts) >= 2 else ''
-
-                # convert value from string to basic python type
-                value = util.convert_value(value)
-
-                # add to sub-config
-                # fix(later): support sub-sub-configs by moving this code into config.set() and making it recursive
-                dot_pos = name.find('.')
-                if dot_pos > 0:
-                    prefix = name[:dot_pos].strip()
-                    if prefix in config_dict:
-                        sub_config = config_dict[prefix]  # fix(soon): verify that this is a dict
-                    else:
-                        sub_config = Config()
-                        config_dict[prefix] = sub_config
-                    sub_config.set(name[dot_pos + 1:], value)
-                    config_dict[name] = value  # for now, let's also add to top-level config so that existing code continues to work
-
-                # or add to main config
-                else:
-                    config_dict[name] = value
+    with open(config_file_name) as input_file:
+        config_dict = yaml.load(input_file, yaml.Loader)
 
     # allow settings to be supplied or overridden with environment variables
     if use_environ:
-        from_environ = {}
         prefix = 'RHIZO_'
         for (name, value) in os.environ.items():
             if name[:len(prefix)] == prefix:
-                config_dict[name[len(prefix):].lower()] = hjson.loads(value)
+                config_dict[name[len(prefix):].lower()] = yaml.load(value, yaml.Loader)
 
     return Config(config_dict)
-
-
-# convert a string value into a list of basic python objects (strings or numbers)
-def as_list(value):
-    if hasattr(value, 'split'):
-        values = value.split(',')
-        return [util.convert_value(v.strip()) for v in values]
-    else:
-        return value
 
 
 # temp function to help with config migration to underscores

@@ -42,7 +42,7 @@ jobs:
 
     - name: Prep config
       run: |
-        cp sample_config.hjson config.hjson
+        cp sample_config.yaml config.yaml
 
     - name: Test with pytest
       run: |

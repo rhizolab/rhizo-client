@@ -7,7 +7,7 @@ from rhizo.extensions.resources import ResourceClient, ApiError
 # test the resource client can write a file and read it back again
 def test_resource_client_read_write_file():
     for new_version in [False]:
-        config = load_config('local.hjson')
+        config = load_config('local.yaml')
         resource_client = ResourceClient(config)
         contents = 'This is a test.\n%d.\n' % random.randint(1, 1000)
         resource_client.write_file(config.server_test_path + '/test.txt', contents, new_version = new_version)
@@ -18,7 +18,7 @@ def test_resource_client_read_write_file():
 # test the resource client can write a file and read it back again
 def test_resource_client_read_write_large_file():
     for binary in [False, True]:
-        config = load_config('local.hjson')
+        config = load_config('local.yaml')
         resource_client = ResourceClient(config)
         if binary:
             contents = bytearray(list(range(256)) * 100)
@@ -33,7 +33,7 @@ def test_resource_client_read_write_large_file():
 
 # test the resource client can write a file and read it back again
 def test_resource_client_file_exists():
-    config = load_config('local.hjson')
+    config = load_config('local.yaml')
     resource_client = ResourceClient(config)
     assert resource_client.file_exists(config.server_test_path + '/test.txt')
     assert not resource_client.file_exists(config.server_test_path + '/test12345.txt')
@@ -41,7 +41,7 @@ def test_resource_client_file_exists():
 
 # test the resource client can create multiple levels of folders at once
 def test_resource_client_create_folder():
-    config = load_config('local.hjson')
+    config = load_config('local.yaml')
     resource_client = ResourceClient(config)
     path = config.server_test_path + '/folder%06d/folder%06d' % (random.randint(1, 999999), random.randint(1, 999999))
     resource_client.create_folder(path)
@@ -51,7 +51,7 @@ def test_resource_client_create_folder():
 # test that the resource client can update and read a sequence value
 def test_resource_client_read_write_sequence():
     for new_version in [False, False]:
-        config = load_config('local.hjson')
+        config = load_config('local.yaml')
         resource_client = ResourceClient(config)
         resource_client.write_file(config.server_test_path + '/test-text-seq', 'ok', new_version = new_version)
         assert 'ok' == resource_client.read_file(config.server_test_path + '/test-text-seq').decode()
@@ -63,7 +63,7 @@ def test_resource_client_read_write_sequence():
 def test_resource_client_send_message():
 
     # prepare to send messages
-    config = load_config('local.hjson')
+    config = load_config('local.yaml')
     resource_client = ResourceClient(config)
     params = {
         'abc': 'test',

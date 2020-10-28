@@ -1,8 +1,8 @@
 {
-	"output_path": "/foo/bar",
-	"sub_config": {
-		"a": "test",
-		"b": 2,
-		"c": 3.14
-	}
+    "output_path": "/foo/bar",
+    "sub_config": {
+        "a": "test",
+        "b": 2,
+        "c": 3.14
+    }
 }

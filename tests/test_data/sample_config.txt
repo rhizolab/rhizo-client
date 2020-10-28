@@ -1,6 +1,0 @@
-output_path /foo/bar
-
-# comment
-sub_config.a test
-sub_config.b 2
-sub_config.c 3.14

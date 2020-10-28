@@ -1,5 +1,5 @@
 *.py[cod]
-config.hjson
-local.hjson
+config.yaml
+local.yaml
 logs
 .venv

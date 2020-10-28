@@ -29,6 +29,12 @@ Typically the `config.hjson` file can be stored in version control while `local.
 settings and items such as secret keys that should not be in version control. Entries in the `local.hjson` file
 override settings in `config.hjson`.
 
+Alternately, config values can be set in environment variables. The variables should be upper-case forms of the config keys with a prefix of `RHIZO_`. For example, `RHIZO_SERVER_NAME` for the `server_name` setting.
+
+The values are parsed as HJSON to allow structured values to be specified in the environment. One specific gotcha to be cautious of is that strings containing colons will need to be enclosed in quotation marks or they'll be interpreted as a key/value pair.
+
+    export RHIZO_SERVER_NAME='"localhost:5000"'
+
 ## Tests
 
 There are two test directories. `tests` contains standalone tests and `tests_with_server` has tests that require a running rhizo-server instance.

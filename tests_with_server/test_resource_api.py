@@ -1,6 +1,6 @@
 import json
 from rhizo.config import load_config
-from rhizo.extensions.resources import ResourceClient
+from rhizo.resources import ResourceClient
 
 
 # test create, update, read, delete folder resource

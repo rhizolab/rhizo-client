@@ -1,7 +1,6 @@
 # standard python imports
 import os
 import sys
-import imp
 import time
 import json
 import base64
@@ -24,7 +23,7 @@ from ws4py.client.geventclient import WebSocketClient
 from . import config
 from . import util
 from .sequence import SequenceManager
-from .extensions.resources import Resources  # fix(soon): remove this and require add as extension?
+from .resources import Resources
 
 
 # A Controller object contains and manages various communication and control threads.
@@ -37,18 +36,15 @@ class Controller(object):
 
         # initialize member variables
         self.config = None  # publicly accessible
-        self.VERSION = '0.0.4'
+        self.VERSION = '0.0.5'
         self.BUILD = 'unknown'
         self._web_socket = None
         self._local_seq_files = {}
-        self._extensions = []
         self._outgoing_messages = []
         self._message_handler = None  # user-defined message handler
         self._error_handlers = []
         self._greenlets = []
         self._path_on_server = None
-        self.resources = None
-        self.sequence = SequenceManager(self)
 
         # process command arguments
         parser = OptionParser()
@@ -67,12 +63,11 @@ class Controller(object):
                 sys.exit(1)
 
         # initialize other controller attributes
-        if self.config.get('enable_keyboard_monitor', False):
-            import kbhit
-            self._kb = kbhit.KBHit()
         self.find_build_ref()
         self.prep_logger(options.verbose or self.config.get('verbose', False))  # make verbose if in config or command-line options
         self.show_config()
+        self.resources = Resources(self)
+        self.sequence = SequenceManager(self)
 
         # if connect to server, but no key, request a key using a PIN
         if self.config.get('enable_server', True) and not self.config.get('secret_key'):
@@ -84,61 +79,16 @@ class Controller(object):
             server_handler.set_level_name(self.config.get('server_log_level', 'info'))
             logging.getLogger().addHandler(server_handler)
 
-        # initialize extensions modules
-        if 'extensions' in self.config:
-            extension_names = self.config.get('extensions', [])
-            for extension_name in extension_names:
-                class_name = underscores_to_camel(extension_name)
-                class_name = class_name[0].upper() + class_name[1:]
-                module_name = extension_name
-                if extension_name == 'serial':  # avoid conflict with pyserial
-                    module_name = 'serial_'
-                paths = [''] + self.config.get('extension_paths', [])
-                success = False
-                for path in paths:  # fix(later): better to just to add extension paths to sys.path?
-                    try:
-                        if path:
-                            ext_mod = imp.load_source(module_name, path + '/' + module_name + '.py')
-                        else:
-                            ext_mod = importlib.import_module('rhizo.extensions.' + module_name)
-                        ext_cls = ext_mod.__dict__[class_name]
-                        extension = ext_cls(self)
-                        self.__dict__[extension_name] = extension
-                        self._extensions.append(extension)
-                        logging.debug('loaded extension: %s' % extension_name)
-                        success = True
-                        break
-                    except ImportError:
-                        pass
-                if not success:
-                    logging.warning('unable to load extension: %s' % extension_name)
-            self.start_greenlets()
-            for extension in self._extensions:
-                if hasattr(extension, 'init'):
-                    extension.init()
-        else:
-            self.start_greenlets()
+        self.start_greenlets()
 
         # wait until ready before running user scripts
         while not self.ready():
             gevent.sleep(0.1)
 
-    # add an extension directly (rather than through config)
-    def add_extension(self, name, extension):
-        self.__dict__[name] = extension
-        self._extensions.append(extension)
-        if hasattr(extension, 'greenlets'):
-            self._greenlets += extension.greenlets()
-        if hasattr(extension, 'init'):
-            extension.init()
-
-    # reload the configuration file from disk and inform the add-ons
+    # reload the configuration file from disk
     def reload_config(self):
         self.load_config()
         self.show_config()
-        for extension in self._extensions:
-            if hasattr(extension, 'reload_config'):
-                extension.reload_config()
 
     # prepare file and console logging for the controller (using the standard python logging library)
     # default log level is INFO unless verbose (then it is DEBUG)
@@ -156,7 +106,7 @@ class Controller(object):
         if self.config.get('log_file_per_run', False):
             time_str = datetime.datetime.now().strftime('%Y-%m-%d-%H%M%S')
             file_handler = logging.FileHandler(log_path + '/' + time_str + '.txt')
-            file_handler.setLevel(5)  # log serial messages to disk
+            file_handler.setLevel(5)  # used to log serial/etc. messages to disk
             file_handler.setFormatter(formatter)
         else:
             max_log_file_size = self.config.get('max_log_file_size', 10000000)
@@ -226,9 +176,6 @@ class Controller(object):
             greenlets.append(gevent.spawn(self.web_socket_sender))
             greenlets.append(gevent.spawn(self.ping_web_socket))
             greenlets.append(gevent.spawn(self.system_monitor))
-        for extension in self._extensions:
-            if hasattr(extension, 'greenlets'):
-                greenlets += extension.greenlets()
         self._greenlets = greenlets
 
     # wait for the user to interrupt the program
@@ -254,16 +201,9 @@ class Controller(object):
     # get the path of the controller folder on the server
     def path_on_server(self):
         if not self._path_on_server:
-            if not self.resources:  # load resources extension since we'll use REST API
-                self.resources = Resources(self)
             file_info = self.resources.file_info('/self')
             self._path_on_server = file_info['path']
         return self._path_on_server
-
-    # send a serial command to the devices via the serial port
-    def send_serial_command(self, device_id, command):
-        logging.warning('using sendSerialCommand; will be removed')
-        self.serial.send_command(device_id, command)
 
     # send a new sequence value to the server
     def update_sequence(self, sequence_name, value, use_websocket=True):
@@ -272,8 +212,6 @@ class Controller(object):
                 if self._web_socket:
                     self.send_message('update_sequence', {'sequence': sequence_name, 'value': value})
             else:  # note that this case currently requires an absolute path on the server
-                if not self.resources:  # create a resource client instance if not already done
-                    self.resources = Resources(self)
                 value = str(value)  # write_file currently expects string values
                 i = 0
                 while True:  # repeat until verified that value is written
@@ -293,8 +231,6 @@ class Controller(object):
     def update_sequences(self, values, timestamp=None):
         if not timestamp:
             timestamp = datetime.datetime.utcnow()
-        if not self.resources:  # create a resource client instance if not already done
-            self.resources = Resources(self)
         params = {
             'values': json.dumps({n: str(v) for n, v in values.items()}),  # make sure all values are strings
             'timestamp': timestamp.isoformat() + ' Z',
@@ -431,28 +367,6 @@ class Controller(object):
             logging.info('processor usage: %.1f%%, disk usage: %.1f%%' % (processor_usage, disk_usage))
             gevent.sleep(30 * 60)  # sleep for 30 minutes
 
-    # monitors the keyboard and e-stops the script
-    def keyboard_monitor(self):
-        is_e_stop = False
-        while True:
-            if self._kb.kbhit():
-                c = self._kb.getch()
-                if ord(c) == 27:  # ESC
-                    break
-                if c == ' ':  # Space bar
-                    is_e_stop = True
-                    break
-                if c == 'c':  # reload configuration
-                    logging.info('reloading configuration file from disk')
-                    self.reload_config()
-            self.sleep(0.01)
-        logging.error('ABORTING: Script stopped by user')
-        if is_e_stop:
-            logging.error('E-STOP: Halting motors')
-            self.motors.e_stop()
-        self._kb.set_normal_term()  # resets the terminal so we can ctrl-c out
-        raise KeyboardInterrupt  # just aborts all running greenlets
-
     # ======== internal processing functions ========
 
     # handle an incoming message from the websocket
@@ -478,11 +392,6 @@ class Controller(object):
                     os.system('shutdown -h now')  # halt (will not work on windows)
             else:
                 message_used = False
-                for extension in self._extensions:
-                    if hasattr(extension, 'process_message'):
-                        (message_used, response_message) = extension.process_message(type, params)
-                        if message_used:
-                            break
                 if not message_used and self._message_handler:
                     if hasattr(self._message_handler, 'handle_message'):
                         self._message_handler.handle_message(type, params)
@@ -592,11 +501,6 @@ class Controller(object):
     # request a PIN and key from the server;
     # this should run before any other greenlets are running
     def request_key(self):
-
-        # initialize resource client so we can use its request function
-        if not self.resources:
-            self.config.secret_key = 'x'  # set a temp secret key since resource client expects one
-            self.resources = Resources(self)
 
         # request PIN
         response = json.loads(self.resources.send_request_to_server('POST', '/api/v1/pins'))

@@ -1,7 +1,7 @@
 import json
 import random
 from rhizo.config import load_config
-from rhizo.extensions.resources import ResourceClient, ApiError
+from rhizo.resources import ResourceClient, ApiError
 
 
 # test the resource client can write a file and read it back again

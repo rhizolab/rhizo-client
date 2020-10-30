@@ -3,13 +3,9 @@ import json
 import base64
 import subprocess
 from rhizo.main import c
-from rhizo.extensions.resources import Resources
 
 
 controller_count = 20
-
-
-c.add_extension('resources', Resources(c))
 
 
 # initialize controllers

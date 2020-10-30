@@ -1,9 +1,10 @@
 import random
+import base64
 import logging
+from io import BytesIO
 from PIL import Image
 from rhizo.main import c
-from rhizo.extensions.camera import encode_image
-from rhizo.extensions.resources import ResourceClient
+from rhizo.resources import ResourceClient
 
 
 # test updating basic sequences
@@ -54,6 +55,20 @@ def test_send_image():
 # check the path_on_server function
 def test_path_on_server():
     assert c.config.server_test_path == c.path_on_server()
+
+
+# encode a PIL image as a base64 string
+def encode_image(image, format='JPEG'):
+    return base64.b64encode(image_data(image, format))
+
+
+# get image data as a jpeg (or other format) image file (raw binary data)
+def image_data(image, format='JPEG'):
+    mem_file = BytesIO()
+    image.save(mem_file, format=format)
+    data = mem_file.getvalue()
+    mem_file.close()
+    return data
 
 
 # if run as a top-level script

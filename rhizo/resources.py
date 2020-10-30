@@ -58,7 +58,11 @@ class ResourceClient(object):
 
     # store information from configuration file
     def __init__(self, config, controller = None):
-        self._secret_key = config.secret_key
+        if 'secret_key' in config:
+            self._secret_key = config.secret_key
+        else:
+            logging.info('no secret key in config')
+            self._secret_key = 'x'  # we may not have a secret key if we haven't yet requested one from server
         self._server_name = config.server_name
         if 'secure_server' in config:
             self._secure_server = config.secure_server
@@ -245,7 +249,7 @@ class ResourceClient(object):
         return data
 
 
-# a version of the resource client that works as a controller extension
+# a version of the resource client that works as a controller sub-module
 class Resources(ResourceClient):
     def __init__(self, controller):
         super(Resources, self).__init__(controller.config, controller)

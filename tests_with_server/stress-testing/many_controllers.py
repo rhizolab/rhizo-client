@@ -2,6 +2,7 @@ import os
 import json
 import base64
 import subprocess
+import gevent
 from rhizo.main import c
 
 
@@ -19,20 +20,20 @@ for i in range(controller_count):
 
     # create server folder
     server_path = c.path_on_server() + '/' + name
-    if not c.resources.file_exists(server_path):
+    if not c.files.file_exists(server_path):
         print('creating on server: %s' % server_path)
         params = {
             'parent': c.path_on_server(),
             'name': name,
             'type': 12,
         }
-        data = c.resources.send_request_to_server('POST', '/api/v1/resources', params)
+        data = c.files.send_request_to_server('POST', '/api/v1/resources', params)
         data = json.loads(data)
         new_id = data['id']
         params = {
             'access_as_controller_id': new_id,
         }
-        data = c.resources.send_request_to_server('POST', '/api/v1/keys', params)
+        data = c.files.send_request_to_server('POST', '/api/v1/keys', params)
         data = json.loads(data)
         print data
         secret_key = data['secret_key']
@@ -53,4 +54,4 @@ for i in range(controller_count):
 
 # wait forever
 while True:
-    c.sleep(1)
+    gevent.sleep(1)

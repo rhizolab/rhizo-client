@@ -1,4 +1,3 @@
-import logging  # fix(clean): remove this after remove item_as_list
 import os
 import yaml
 

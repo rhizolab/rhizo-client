@@ -1,4 +1,5 @@
 import logging
+import gevent
 from rhizo.main import c
 
 
@@ -19,7 +20,7 @@ def test_send_message():
                 'message': 'This is a test.',
             }
         )
-    c.sleep(2)
+    gevent.sleep(2)
 
 
 def message_handler(type, params):
@@ -27,9 +28,9 @@ def message_handler(type, params):
 
 
 def test_send_message_with_folder():
-    c.add_message_handler(message_handler)
-    c.send_message('test_message', {'foo': 'bar'}, folder = '/modtest/nodeNetTest2')
-    c.sleep(5)
+    c.messages.add_handler(message_handler)
+    c.messages.send('test_message', {'foo': 'bar'}, folder = '/modtest/nodeNetTest2')
+    gevent.sleep(5)
 
 
 # if run as a top-level script

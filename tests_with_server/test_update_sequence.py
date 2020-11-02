@@ -2,6 +2,7 @@ import random
 import base64
 import logging
 from io import BytesIO
+import gevent
 from PIL import Image
 from rhizo.main import c
 from rhizo.resources import ResourceClient
@@ -17,7 +18,7 @@ def test_update_sequence():
     c.update_sequence('testFloatSeq', v + 0.5, use_websocket = True)
     c.update_sequence('folder/testSub', test_val2, use_websocket = True)
     logging.info('updated sequences (%d)' % v)
-    c.sleep(5)  # wait so outbound messages are sent
+    gevent.sleep(5)  # wait so outbound messages are sent
 
     # read back using resource client
     if True:
@@ -43,7 +44,7 @@ def test_send_image():
     contents = encode_image(image)
     c.update_sequence('image', contents)
     logging.info('updated image (%d, %d, %d)' % (r, g, b))
-    c.sleep(2)  # wait so outbound messages are sent
+    gevent.sleep(2)  # wait so outbound messages are sent
 
     # read back using resource client
     if False:

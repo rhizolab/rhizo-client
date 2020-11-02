@@ -53,8 +53,8 @@ class WriteFileWrapper(object):
             self.close()
 
 
-# the ResourceClient class is used to access the resource API provided by the server
-class ResourceClient(object):
+# the FileClient class is used to access the resource API provided by the server
+class FileClient(object):
 
     # store information from configuration file
     def __init__(self, config, controller = None):
@@ -72,9 +72,16 @@ class ResourceClient(object):
         self._enable_cache = config.get('enable_cache', False)
         self._controller = controller
 
+        # some aliases for compatibility
+        self.list_files = self.list
+        self.file_exists = self.exists
+        self.file_info = self.info
+        self.read_file = self.read
+        self.write_file = self.write
+
     # get a list of files from the server;
     # each item in the list is a dictionary with the resource name and other meta-data
-    def list_files(self, dir_path, recursive = False, type = None, filter = None, extended = False):
+    def list(self, dir_path, recursive = False, type = None, filter = None, extended = False):
         assert dir_path.startswith('/')
         params = {'extended': int(extended)}
         if recursive:
@@ -87,7 +94,7 @@ class ResourceClient(object):
         return json.loads(data)
 
     # returns boolean indicating whether file exists (or raises ApiError on permission failure or other error)
-    def file_exists(self, file_name):
+    def exists(self, file_name):
         assert file_name.startswith('/')
         file_name = file_name.replace(' ', '%20')  # fix(soon): use proper url encoding function instead
         try:
@@ -100,7 +107,7 @@ class ResourceClient(object):
         return True
 
     # returns a dictionary of info about a file
-    def file_info(self, file_name):
+    def info(self, file_name):
         assert file_name.startswith('/')
         file_info = self.send_request_to_server('GET', '/api/v1/resources' + file_name, {'meta': 1, 'include_path': 1})
         return json.loads(file_info)
@@ -114,7 +121,7 @@ class ResourceClient(object):
             return StringIO(self.read_file(file_name))
 
     # read a file from the server; returns data as bytes; if reading string from text file, use .decode() on returned value
-    def read_file(self, file_path):
+    def read(self, file_path):
         assert file_path.startswith('/')
         data = None
         if self._enable_cache:
@@ -152,7 +159,7 @@ class ResourceClient(object):
         self.send_request_to_server('POST', '/api/v1/resources', params)
 
     # write a file to the server; contents can be string or bytes
-    def write_file(self, file_path, contents, creation_timestamp = None, modification_timestamp = None, new_version = False):
+    def write(self, file_path, contents, creation_timestamp = None, modification_timestamp = None, new_version = False):
         try:
             data = base64.b64encode(contents)  # handle bytes
         except:
@@ -249,10 +256,8 @@ class ResourceClient(object):
         return data
 
 
-# a version of the resource client that works as a controller sub-module
-class Resources(ResourceClient):
-    def __init__(self, controller):
-        super(Resources, self).__init__(controller.config, controller)
+# temporary alias for backward compatibility
+ResourceClient = FileClient
 
 
 # send an HTTP request to a server;

@@ -1,20 +1,28 @@
 import json
 import random
 import datetime
-from rhizo.main import c
+import pytest
+import gevent
+from rhizo.controller import Controller
 from rhizo.util import parse_json_datetime
 
 
+
+@pytest.fixture
+def controller():
+    return Controller()
+
+
 # send watchdog message and check that watchdog timestamp has updated
-def test_controller_watchdog():
-    c.send_message('watchdog', {})
-    c.sleep(2)  # give controller some time to send the message
-    own_path = c.path_on_server()
+def test_controller_watchdog(controller):
+    controller.send_message('watchdog', {})
+    gevent.sleep(2)  # give controller some time to send the message
+    own_path = controller.path_on_server()
     (own_parent, own_name) = own_path.rsplit('/', 1)
     print('own path: %s' % own_path)
     print('own parent: %s' % own_parent)
     print('own name: %s' % own_name)
-    file_list = c.resources.list_files(own_parent, type='controller_folder')  # get list of controllers
+    file_list = controller.files.list_files(own_parent, type='controller_folder')  # get list of controllers
     print('controllers: %s' % len(file_list))
     for file_info in file_list:
         if file_info['name'] == own_name:
@@ -25,16 +33,16 @@ def test_controller_watchdog():
 
 
 # update controller status and check that it has been updated
-def test_controller_status():
+def test_controller_status(controller):
     test_str = 'test%06d' % random.randint(0, 999999)
-    own_path = c.path_on_server()
+    own_path = controller.path_on_server()
     (own_parent, own_name) = own_path.rsplit('/', 1)
     print('own path: %s' % own_path)
     print('own parent: %s' % own_parent)
     print('own name: %s' % own_name)
     print('setting status: %s' % test_str)
-    c.resources.send_request_to_server('PUT', '/api/v1/resources' + own_path, {'status': json.dumps({'foo': test_str})})
-    file_list = c.resources.list_files(own_parent, type='controller_folder')  # get list of controllers
+    controller.files.send_request_to_server('PUT', '/api/v1/resources' + own_path, {'status': json.dumps({'foo': test_str})})
+    file_list = controller.files.list_files(own_parent, type='controller_folder')  # get list of controllers
     for file_info in file_list:
         if file_info['name'] == own_name:
             status = file_info['status']['foo']
@@ -44,5 +52,6 @@ def test_controller_status():
 
 # if run as a top-level script
 if __name__ == '__main__':
-    test_controller_watchdog()
-    test_controller_status()
+    c = Controller()
+    test_controller_watchdog(c)
+    test_controller_status(c)

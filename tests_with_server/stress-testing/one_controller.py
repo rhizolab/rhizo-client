@@ -15,7 +15,7 @@ class TestConnection(object):
         self.name = name
         self.c = Controller()
         self.message_index = 0
-        self.c.add_message_handler(self)
+        self.c.messages.add_handler(self)
         gevent.spawn(self.main_loop)
 
     # loop forever sending messages

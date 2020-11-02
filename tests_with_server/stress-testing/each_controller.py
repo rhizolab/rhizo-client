@@ -1,4 +1,5 @@
 import os
+import gevent
 from rhizo.main import c
 
 
@@ -13,5 +14,5 @@ while True:
     message = 'msg-%s-%d' % (name, message_index)
     print('%s: send: %s' % (name, message))
     c.send_message(message, {})
-    c.sleep(1)
+    gevent.sleep(1)
     message_index += 1

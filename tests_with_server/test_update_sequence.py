@@ -18,7 +18,7 @@ def test_update_sequence():
     c.update_sequence('testFloatSeq', v + 0.5, use_websocket = True)
     c.update_sequence('folder/testSub', test_val2, use_websocket = True)
     logging.info('updated sequences (%d)' % v)
-    gevent.sleep(5)  # wait so outbound messages are sent
+    gevent.sleep(15)  # wait so outbound messages are sent; fix(soon): rethink this; it doesn't seem very reliable
 
     # read back using resource client
     if True:
@@ -60,7 +60,7 @@ def test_path_on_server():
 
 # encode a PIL image as a base64 string
 def encode_image(image, format='JPEG'):
-    return base64.b64encode(image_data(image, format))
+    return base64.b64encode(image_data(image, format)).decode()  # want string output, not bytes
 
 
 # get image data as a jpeg (or other format) image file (raw binary data)

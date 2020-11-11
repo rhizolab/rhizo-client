@@ -90,4 +90,4 @@ def test_resource_client_send_message():
 
 # if run as a top-level script
 if __name__ == '__main__':
-    test_resource_client_read_write_file()
+    test_resource_client_create_folder()

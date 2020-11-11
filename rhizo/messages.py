@@ -6,6 +6,7 @@ import logging
 import datetime
 import traceback
 import gevent
+import paho.mqtt.client as mqtt
 from . import util
 from ws4py.client.geventclient import WebSocketClient
 
@@ -18,15 +19,54 @@ class MessageClient(object):
         self._web_socket = None
         self._outgoing_messages = []
         self._message_handlers = []  # user-defined message handlers
+        self._client = None
+        self._client_connected = False
 
     def connect(self):
-        gevent.spawn(self.web_socket_listener)
-        gevent.spawn(self.web_socket_sender)
-        gevent.spawn(self.ping_web_socket)
+
+        # old websocket connection
+        if self._controller.config.get('enable_ws', True):
+            gevent.spawn(self.web_socket_listener)
+            gevent.spawn(self.web_socket_sender)
+            gevent.spawn(self.ping_web_socket)
+
+        # MQTT connection
+        if 'mqtt_host' in self._controller.config:
+            mqtt_host = self._controller.config.mqtt_host
+            mqtt_port = self._controller.config.get('mqtt_port', 443)
+
+            # run this on connect/reconnect to MQTT server/broker
+            def on_connect(client, userdata, flags, rc):
+                if rc:
+                    logging.warning('unable to connect to MQTT broker/server at %s:%d' % (mqtt_host, mqtt_port))
+                else:
+                    logging.info('connected to MQTT broker/server at %s:%d' % (mqtt_host, mqtt_port))
+                    self._client_connected = True
+                topic = self._controller.path_on_server().lstrip('/')  # don't use leading slash for MQTT topics
+                self._client.subscribe(topic)
+                logging.info('subscribed to %s' % topic)
+
+            # run this on disconnect from MQTT server/broker
+            def on_disconnect(client, userdata, rc):
+                self._client_connected = False
+
+            # run this on incoming MQTT message
+            def on_message(client, userdata, msg):
+                #print('MQTT recv: %s %s' % (msg.topic, msg.payload.decode()))
+                self.process_incoming_message(msg.payload.decode())
+
+            self._client = mqtt.Client(transport='websockets')
+            self._client.on_connect = on_connect
+            self._client.on_disconnect = on_disconnect
+            self._client.on_message = on_message
+            self._client.username_pw_set('key', self._controller.config.secret_key)
+            self._client.tls_set()  # enable SSL
+            self._client.connect(mqtt_host, mqtt_port)
+            self._client.loop_start()
 
     # returns True if websocket is connected to server
     def connected(self):
-        return self._web_socket is not None
+        return (self._web_socket is not None) or (self._client and self._client_connected)
 
     # send a generic message to the server
     def send(self, type, parameters, channel=None, folder=None, prepend=False):
@@ -38,7 +78,16 @@ class MessageClient(object):
             message_struct['folder'] = folder
         if channel:
             message_struct['channel'] = channel
-        self.send_message_struct_to_server(message_struct, prepend)
+        if self._client:
+            if folder:
+                path = folder
+            else:
+                path = self._controller.path_on_server()
+            path = path.lstrip('/')  # rhizo paths start with slash (to distinguish absolute vs relative paths) while MQTT topics don't
+            self._client.publish(path, json.dumps(message_struct))
+            #print('MQTT send: %s, %s' % (path, json.dumps(message_struct))) 
+        else:
+            self.send_message_struct_to_server(message_struct, prepend)
 
     # send an email (to up to five addresses)
     def send_email(self, email_addresses, subject, body):
@@ -87,7 +136,7 @@ class MessageClient(object):
         return ws
 
     # handle an incoming message from the websocket
-    def process_web_socket_message(self, message):
+    def process_incoming_message(self, message):
         message_struct = json.loads(str(message))
 
         # process the message
@@ -180,7 +229,7 @@ class MessageClient(object):
                     except:
                         message = None
                     if message:
-                        self.process_web_socket_message(message)
+                        self.process_incoming_message(message)
                     else:
                         logging.warning('disconnected (on received); reconnecting...')
                         self._web_socket = None

@@ -29,7 +29,7 @@ def message_handler(type, params):
 
 def test_send_message_with_folder():
     c.messages.add_handler(message_handler)
-    c.messages.send('test_message', {'foo': 'bar'}, folder = '/modtest/nodeNetTest2')
+    c.messages.send('test_message', {'foo': 'bar'}, folder = c.path_on_server() + '/folder')
     gevent.sleep(5)
 
 

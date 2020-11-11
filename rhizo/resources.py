@@ -148,8 +148,9 @@ class FileClient(object):
     def retrieve_resource_data(self, file_path):
         return self.send_request_to_server('GET', '/api/v1/resources' + file_path, {}, accept_binary = True)
 
-    # create a folder on the server (can be used to create multiple levels at once)
+    # create a folder on the server (can be used to create multiple levels at once); folder_path must be absolute (with leading slash)
     def create_folder(self, folder_path):
+        assert folder_path.startswith('/')
         parts = folder_path.rsplit('/', 1)
         params = {
             'path': parts[0],

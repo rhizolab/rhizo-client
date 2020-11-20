@@ -251,7 +251,8 @@ class Controller(object):
             status_folder = self.path_on_server() + '/status'
             seq_values = {status_folder + '/processor_usage': processor_usage, status_folder + '/disk_usage': disk_usage}
             self.sequences.update_multiple(seq_values)
-            logging.info('processor usage: %.1f%%, disk usage: %.1f%%' % (processor_usage, disk_usage))
+            if processor_usage > 80 or disk_usage > 80:
+                logging.info('processor usage: %.1f%%, disk usage: %.1f%%' % (processor_usage, disk_usage))
             gevent.sleep(30 * 60)  # sleep for 30 minutes
 
     # request a PIN and key from the server;

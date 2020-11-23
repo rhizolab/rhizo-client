@@ -52,7 +52,17 @@ class SequenceClient(object):
     def update(self, sequence_name, value, use_websocket=True):
         if self._controller.config.get('enable_server', True):
             if use_websocket:
-                self._controller.messages.send('update_sequence', {'sequence': sequence_name, 'value': value})
+                if self._controller.config.get('mqtt_host'):
+                    timestamp = datetime.datetime.utcnow()
+                    if sequence_name.startswith('/'):
+                        full_path = sequence_name
+                    else:
+                        full_path = self._controller.path_on_server() + '/' + sequence_name
+                    (path, rel_name) = full_path.rsplit('/', 1)
+                    message = 's,%s,%s Z,%s' % (rel_name, timestamp.isoformat(), value)
+                    self._controller.messages.send_simple(path, message)  # expects absolute path
+                else:
+                    self._controller.messages.send('update_sequence', {'sequence': sequence_name, 'value': value})
             else:  # note that this case currently requires an absolute path on the server
                 value = str(value)  # write_file currently expects string values
                 i = 0
@@ -70,14 +80,32 @@ class SequenceClient(object):
 
     # update multiple sequences; timestamp must be UTC (or None)
     # values should be a dictionary of sequence values by path (for now assuming absolute sequence paths)
-    def update_multiple(self, values, timestamp=None):
+    def update_multiple(self, values, timestamp=None, use_message=False):
         if not timestamp:
             timestamp = datetime.datetime.utcnow()
-        params = {
-            'values': json.dumps({n: str(v) for n, v in values.items()}),  # make sure all values are strings
-            'timestamp': timestamp.isoformat() + ' Z',
-        }
-        self._controller.files.send_request_to_server('PUT', '/api/v1/resources', params)
+        controller_path = self._controller.path_on_server()
+        if use_message:  # send a new-style multi-sequence update message 
+            params = {'$t': timestamp.isoformat() + ' Z'}
+            path_len = len(controller_path)
+            for name, value in values.items():
+                if name.startswith('/'):  # make sure all paths are relative
+                    assert name.startswith(controller_path)
+                    rel_name = name[path_len+1:]
+                else:
+                    rel_name = name
+                params[rel_name] = str(value)  # make sure all values are strings
+            self._controller.messages.send('update', params)
+        else:  # update via REST API
+            send_values = {}
+            for name, value in values.items():
+                if not name.startswith('/'):  # make sure all paths are absolute
+                    name = controller_path + '/' + name
+                send_values[name] = str(value)  # make sure all values are strings
+            params = {
+                'values': json.dumps(send_values),
+                'timestamp': timestamp.isoformat() + ' Z',
+            }
+            self._controller.files.send_request_to_server('PUT', '/api/v1/resources', params)
 
     # stores a sequence value in a local log file (an alternative to sending the value to the server)
     def store_local_sequence_value(self, sequence_name, value):

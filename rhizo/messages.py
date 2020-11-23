@@ -52,7 +52,7 @@ class MessageClient(object):
 
             # run this on incoming MQTT message
             def on_message(client, userdata, msg):
-                #print('MQTT recv: %s %s' % (msg.topic, msg.payload.decode()))
+                # print('MQTT recv: %s, %s' % (msg.topic, msg.payload.decode()))
                 self.process_incoming_message(msg.payload.decode())
 
             self._client = mqtt.Client(transport='websockets')
@@ -69,25 +69,32 @@ class MessageClient(object):
         return (self._web_socket is not None) or (self._client and self._client_connected)
 
     # send a generic message to the server
-    def send(self, type, parameters, channel=None, folder=None, prepend=False):
-        message_struct = {
-            'type': type,
-            'parameters': parameters
-        }
-        if folder:
-            message_struct['folder'] = folder
-        if channel:
-            message_struct['channel'] = channel
-        if self._client:
+    def send(self, message_type, parameters, channel=None, folder=None, prepend=False):
+        if self._client:  # MQTT messages
             if folder:
                 path = folder
             else:
                 path = self._controller.path_on_server()
-            path = path.lstrip('/')  # rhizo paths start with slash (to distinguish absolute vs relative paths) while MQTT topics don't
-            self._client.publish(path, json.dumps(message_struct))
-            #print('MQTT send: %s, %s' % (path, json.dumps(message_struct))) 
-        else:
+            topic = path.lstrip('/')  # rhizo paths start with slash (to distinguish absolute vs relative paths) while MQTT topics don't
+            message = json.dumps({message_type: parameters})
+            self._client.publish(topic, message)
+            # print('MQTT send: %s, %s' % (topic, message)) 
+        else:  # old-style websocket messages
+            message_struct = {
+                'type': message_type,
+                'parameters': parameters
+            }
+            if folder:
+                message_struct['folder'] = folder
+            if channel:
+                message_struct['channel'] = channel
             self.send_message_struct_to_server(message_struct, prepend)
+
+    def send_simple(self, path, message):
+        if self._client:
+            topic = path.lstrip('/')  # rhizo paths start with slash (to distinguish absolute vs relative paths) while MQTT topics don't
+            self._client.publish(topic, message)
+            # print('MQTT send: %s, %s' % (topic, message))
 
     # send an email (to up to five addresses)
     def send_email(self, email_addresses, subject, body):
@@ -137,29 +144,35 @@ class MessageClient(object):
 
     # handle an incoming message from the websocket
     def process_incoming_message(self, message):
-        message_struct = json.loads(str(message))
-
-        # process the message
-        if 'type' in message_struct and 'parameters' in message_struct:
-            type = message_struct['type']
-            params = message_struct['parameters']
-            channel = message_struct.get('channel')
+        message_type = None
+        parameters = None
+        if message[0] == '{':
+            message_struct = json.loads(str(message))
+            if 'type' in message_struct:
+                message_type = message_struct['type']
+                parameters = message_struct['parameters']
+            else:
+                for k, v in message_struct.items():
+                    message_type = k
+                    parameters = v
+                    break
+        else:
+            message_type, parameters = message.split(',', 1)  # note: in this case, parameters is a string not dictionary
+        if message_type:
             response_message = None
-            if type == 'get_config' or type == 'getConfig':
-                response_message = self.config_message(params['names'].split(','))
-            elif type == 'set_config' or type == 'setConfig':
-                self.set_config(params)
+            if message_type == 'get_config' or message_type == 'getConfig':
+                response_message = self.config_message(parameters['names'].split(','))
+            elif message_type == 'set_config' or message_type == 'setConfig':
+                self.set_config(parameters)
             else:
                 message_used = False
                 if not message_used and self._message_handlers:
                     for handler in self._message_handlers:
                         if hasattr(handler, 'handle_message'):
-                            handler.handle_message(type, params)
+                            handler.handle_message(message_type, parameters)
                         else:
-                            handler(type, params)
+                            handler(message_type, parameters)
             if response_message:
-                if channel:
-                    response_message['channel'] = channel
                 self.send_message_struct_to_server(response_message)
 
     # send a websocket message to the server

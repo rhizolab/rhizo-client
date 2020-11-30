@@ -34,6 +34,7 @@ class MessageClient(object):
         if 'mqtt_host' in self._controller.config:
             mqtt_host = self._controller.config.mqtt_host
             mqtt_port = self._controller.config.get('mqtt_port', 443)
+            mqtt_tls = self._controller.config.get('mqtt_tls', True)
 
             # run this on connect/reconnect to MQTT server/broker
             def on_connect(client, userdata, flags, rc):
@@ -60,11 +61,12 @@ class MessageClient(object):
             self._client.on_disconnect = on_disconnect
             self._client.on_message = on_message
             self._client.username_pw_set('key', self._controller.config.secret_key)
-            self._client.tls_set()  # enable SSL
+            if mqtt_tls or mqtt_host == 'localhost' or mqtt_host == '127.0.0.1':
+                self._client.tls_set()  # enable SSL
             self._client.connect(mqtt_host, mqtt_port)
             self._client.loop_start()
 
-    # returns True if websocket is connected to server
+    # returns True if connected to MQTT or websocket server
     def connected(self):
         return (self._web_socket is not None) or (self._client and self._client_connected)
 
@@ -78,7 +80,7 @@ class MessageClient(object):
             topic = path.lstrip('/')  # rhizo paths start with slash (to distinguish absolute vs relative paths) while MQTT topics don't
             message = json.dumps({message_type: parameters})
             self._client.publish(topic, message)
-            # print('MQTT send: %s, %s' % (topic, message)) 
+            # print('MQTT send: %s, %s' % (topic, message))
         else:  # old-style websocket messages
             message_struct = {
                 'type': message_type,

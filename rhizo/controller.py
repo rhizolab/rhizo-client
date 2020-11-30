@@ -86,8 +86,12 @@ class Controller(object):
 
             # connect to message server
             self.messages.connect()
+            last_message_time = time.time()
             while not self.messages.connected():
                 gevent.sleep(0.1)
+                if time.time() > last_message_time + 5:
+                    logging.info('waiting for connection to message server')
+                    last_message_time = time.time()
 
     # prepare file and console logging for the controller (using the standard python logging library)
     # default log level is INFO unless verbose (then it is DEBUG)

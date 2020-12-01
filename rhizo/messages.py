@@ -61,7 +61,7 @@ class MessageClient(object):
             self._client.on_disconnect = on_disconnect
             self._client.on_message = on_message
             self._client.username_pw_set('key', self._controller.config.secret_key)
-            if mqtt_tls or mqtt_host == 'localhost' or mqtt_host == '127.0.0.1':
+            if mqtt_tls or (mqtt_host != 'localhost' and mqtt_host != '127.0.0.1'):
                 self._client.tls_set()  # enable SSL
             self._client.connect(mqtt_host, mqtt_port)
             self._client.loop_start()

@@ -1,9 +1,18 @@
-rhizo
-=====
+rhizo-client
+============
+
+This is a client library for communicating with [rhizo-server](https://github.com/rhizolab/rhizo-server).
 
 ## Installation
 
-If you are not installing this as a package (e.g. via `pip`), you should install the dependencies (`pip install -r requirements.txt`) and add the directory *outside* the `rhizo` folder to your `PYTHONPATH`.
+For ordinary usage, the library may be installed using pip (`pip install rhizo-client`).
+
+To work on the library itself, install it in editable mode (`pip install -e .`) which will install the required dependencies.
+
+To use a local copy of the library in a different project, install it in editable mode.
+
+    cd /path/to/other/project
+    pip install -e /path/to/rhizo-client
 
 ## Configuration
 
@@ -11,6 +20,8 @@ The rhizo controller reads a `config.yaml` file and optionally `local.yaml` file
 Typically the `config.yaml` file can be stored in version control while `local.yaml` contains system-specific
 settings and items such as secret keys that should not be in version control. Entries in the `local.yaml` file
 override settings in `config.yaml`.
+
+A minimal sample configuration file (`sample_config.yaml`) is included in the distribution.
 
 Alternately, config values can be set in environment variables. The variables should be upper-case forms of the config keys with a prefix of `RHIZO_`. For example, `RHIZO_SERVER_NAME` for the `server_name` setting.
 
@@ -30,3 +41,14 @@ Then run `pytest tests`.
 
 To run the server-based tests, create `tests_with_server/local.yaml` with your server settings and run `pytest` from the `tests_with_server` directory.
 (Note: currently this requires some steps to be completed on the server; we'll work on streamlining/documenting this.)
+
+## Packaging
+
+To build a package for public release, follow [the usual procedure](https://packaging.python.org/guides/distributing-packages-using-setuptools/#packaging-your-project):
+
+    pip install wheel
+    python setup.py bdist_wheel
+
+The project is configured to build as a universal wheel since it supports both Python 2 and Python 3 and does not include compiled extensions.
+
+To upload new releases to PyPI, see [the Python packaging documentation](https://packaging.python.org/guides/distributing-packages-using-setuptools/#uploading-your-project-to-pypi).

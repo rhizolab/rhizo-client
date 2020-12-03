@@ -1,5 +1,0 @@
-gevent
-ws4py
-psutil
-pyyaml==5.3.1
-paho-mqtt

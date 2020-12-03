@@ -3,24 +3,7 @@ rhizo
 
 ## Installation
 
-Install dependencies:
-
-    pip install -r requirements.txt
-
-Note: some extensions may have additional dependencies (e.g., pyserial, pillow). To install the dependencies for the built-in extensions, run
-
-    pip install -r rhizo/extensions/requirements.txt
-
-Add the `rhizo` folder to your `PYTHONPATH`.
-
-## Controller
-
-The controller handles core functionality: server communication, logging, and running scripts.
-
-## Extensions
-
-Extension objects are used to implement additional functionality. These objects are stored inside the controller 
-(and maintain their own reference to the controller).
+If you are not installing this as a package (e.g. via `pip`), you should install the dependencies (`pip install -r requirements.txt`) and add the directory *outside* the `rhizo` folder to your `PYTHONPATH`.
 
 ## Configuration
 
@@ -37,7 +20,7 @@ The values are parsed as YAML to allow structured values to be specified in the 
 
 ## Tests
 
-There are two test directories. `tests` contains standalone tests and `tests_with_server` has tests that require a running rhizo-server instance.
+There are two test directories: `tests` contains standalone tests and `tests_with_server` has tests that require a running rhizo-server instance.
 
 To run the standalone tests, first install the test dependencies (you only need to do this once):
 
@@ -45,4 +28,5 @@ To run the standalone tests, first install the test dependencies (you only need 
 
 Then run `pytest tests`.
 
-To run the server-based tests, create `tests_with_server/local.yaml` with your server settings and execute the test files directly (that is, don't run them under pytest). Make sure your `PYTHONPATH` is set correctly to find the library!
+To run the server-based tests, create `tests_with_server/local.yaml` with your server settings and run `pytest` from the `tests_with_server` directory.
+(Note: currently this requires some steps to be completed on the server; we'll work on streamlining/documenting this.)

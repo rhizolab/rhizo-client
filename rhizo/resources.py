@@ -2,6 +2,7 @@ import os
 import gevent
 import base64
 import json
+import ssl
 import urllib
 try:
     from httplib import HTTPConnection, HTTPSConnection
@@ -64,6 +65,11 @@ class FileClient(object):
             logging.info('no secret key in config')
             self._secret_key = 'x'  # we may not have a secret key if we haven't yet requested one from server
         self._server_name = config.server_name
+        if 'ssl_skip_verify' in config:
+            self._ssl_skip_verify = config.ssl_skip_verify
+        else:
+            self._ssl_skip_verify = False
+
         if 'secure_server' in config:
             self._secure_server = config.secure_server
         else:
@@ -233,7 +239,7 @@ class FileClient(object):
             try:
 
                 # if the request is valid, we can go ahead and return the data
-                (status, reason, data) = send_request(self._server_name, method, path, params, self._secure_server, accept_type, basic_auth = basic_auth)
+                (status, reason, data) = send_request(self._server_name, method, path, params, self._secure_server, accept_type, basic_auth, self._ssl_skip_verify)
                 if status == 200:
                     break
                 err_text = '%d %s' % (status, reason)
@@ -263,7 +269,7 @@ ResourceClient = FileClient
 
 # send an HTTP request to a server;
 # returns response tuple: (response status, response reason, response data)
-def send_request(server, method, path, params, secure = True, accept_type = 'text/plain', basic_auth = None):
+def send_request(server, method, path, params, secure = True, accept_type = 'text/plain', basic_auth = None, ssl_skip_verify = False):
     headers = {
         'Content-type': 'application/x-www-form-urlencoded',
         'Accept': accept_type,
@@ -275,7 +281,10 @@ def send_request(server, method, path, params, secure = True, accept_type = 'tex
     except:  # python 3
         params = urllib.parse.urlencode(params)
     if secure:
-        conn = HTTPSConnection(server)
+        if ssl_skip_verify:
+            conn = HTTPSConnection(server, context=ssl._create_unverified_context())
+        else:
+            conn = HTTPSConnection(server)
     else:
         conn = HTTPConnection(server)
     conn.request(method, path, params, headers)

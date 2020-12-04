@@ -35,7 +35,7 @@ for i in range(controller_count):
         }
         data = c.files.send_request_to_server('POST', '/api/v1/keys', params)
         data = json.loads(data)
-        print data
+        print(data)
         secret_key = data['secret_key']
 
         # create config file

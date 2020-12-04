@@ -5,7 +5,7 @@ from rhizo.main import c
 
 path_on_server = c.path_on_server()
 name = path_on_server.rsplit('/', 1)[1]
-print name, os.getcwd(), path_on_server
+print(name, os.getcwd(), path_on_server)
 
 
 # loop forever sending messages

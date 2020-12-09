@@ -3,6 +3,7 @@ import logging
 import datetime
 import gevent
 from collections import defaultdict
+from itertools import groupby
 
 
 data_types = {'numeric': 1, 'text': 2, 'image': 3}
@@ -80,21 +81,23 @@ class SequenceClient(object):
 
     # update multiple sequences; timestamp must be UTC (or None)
     # values should be a dictionary of sequence values by path (for now assuming absolute sequence paths)
-    def update_multiple(self, values, timestamp=None, use_message=False):
+    def update_multiple(self, values, timestamp=None, use_message=True):
         if not timestamp:
             timestamp = datetime.datetime.utcnow()
         controller_path = self._controller.path_on_server()
-        if use_message:  # send a new-style multi-sequence update message 
-            params = {'$t': timestamp.isoformat() + ' Z'}
-            path_len = len(controller_path)
-            for name, value in values.items():
-                if name.startswith('/'):  # make sure all paths are relative
-                    assert name.startswith(controller_path)
-                    rel_name = name[path_len+1:]
+        if use_message:  # send a new-style multi-sequence update message, one message per folder
+            all_paths = sorted(list(values.keys()))
+            for folder, paths in groupby(all_paths, lambda path: path.rsplit('/', 1)[0]):
+                if folder.startswith('/'):
+                    assert folder.startswith(controller_path)
+                    rel_folder = folder[1:]
                 else:
-                    rel_name = name
-                params[rel_name] = str(value)  # make sure all values are strings
-            self._controller.messages.send('update', params)
+                    rel_folder = folder
+                params = {'$t': timestamp.isoformat() + ' Z'}
+                for path in paths:
+                    rel_path = path.rsplit('/', 1)[1]
+                    params[rel_path] = str(values[path])  # make sure all values are strings
+                self._controller.messages.send('update', params, folder=rel_folder)
         else:  # update via REST API
             send_values = {}
             for name, value in values.items():

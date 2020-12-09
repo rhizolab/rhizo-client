@@ -7,7 +7,7 @@ with open(str(here / 'README.md')) as f:
 
 setup(
     name='rhizo-client',
-    version='0.1.1',
+    version='0.1.2',
     description='Client for rhizo-server',
     long_description=long_description,
     long_description_content_type='text/markdown',

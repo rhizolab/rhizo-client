@@ -101,7 +101,7 @@ class MessageClient(object):
     # send an email (to up to five addresses)
     def send_email(self, email_addresses, subject, body):
         self.send('send_email', {
-            'emailAddresses': email_addresses,
+            'email_addresses': email_addresses,
             'subject': subject,
             'body': body,
         })
@@ -109,7 +109,7 @@ class MessageClient(object):
     # send a text message (to up to five phone numbers)
     def send_sms(self, phone_numbers, message):
         self.send('send_text_message', {
-            'phoneNumbers': phone_numbers,
+            'phone_numbers': phone_numbers,
             'message': message,
         })
 

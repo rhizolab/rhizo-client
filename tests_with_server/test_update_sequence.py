@@ -10,18 +10,18 @@ from rhizo.resources import ResourceClient
 
 # test updating basic sequences
 def test_update_sequence():
-    v = random.randint(1, 100)
-    test_val1 = 'foo-%d' % v
-    test_val2 = 'bar-%d' % v
-    c.sequences.update(c.path_on_server() + '/test', test_val1, use_websocket=True)
-    c.sequences.update(c.path_on_server() + '/testIntSeq', v, use_websocket=True)
-    c.sequences.update('testFloatSeq', v + 0.5, use_websocket=True)
-    c.sequences.update('folder/testSub', test_val2, use_websocket=True)
-    logging.info('updated sequences (%d)' % v)
-    gevent.sleep(10)  # wait so outbound messages are sent
+    for use_message in [False, True]:
+        v = random.randint(1, 100)
+        test_val1 = 'foo-%d' % v
+        test_val2 = 'bar-%d' % v
+        c.sequences.update(c.path_on_server() + '/test', test_val1, use_websocket=use_message)
+        c.sequences.update(c.path_on_server() + '/testIntSeq', v, use_websocket=use_message)
+        c.sequences.update('testFloatSeq', v + 0.5, use_websocket=use_message)
+        c.sequences.update('folder/testSub', test_val2, use_websocket=use_message)
+        logging.info('updated sequences (%d)' % v)
+        gevent.sleep(5)  # wait so outbound messages are sent
 
-    # read back using resource client
-    if True:
+        # read back using resource client
         resource_client = ResourceClient(c.config)
         assert test_val1 == resource_client.read_file(c.path_on_server() + '/test').decode()
         assert test_val2 == resource_client.read_file(c.path_on_server() + '/folder/testSub').decode()
@@ -35,11 +35,18 @@ def test_update_multi():
         v = random.randint(1, 100)
         test_val1 = 'foo-%d' % v
         test_val2 = 'bar-%d' % v
-        c.sequences.update_multiple({'test': test_val1, 'testIntSeq': v, 'testFloatSeq': v + 0.5}, use_message=use_message)
+        seq_values = {
+            'test': test_val1,
+            'testIntSeq': v,
+            'folder/testSub': test_val2,
+            'testFloatSeq': v + 0.5
+        }
+        c.sequences.update_multiple(seq_values, use_message=use_message)
         logging.info('updated multi sequences (%d)' % v)
-        gevent.sleep(10)  # wait so outbound messages are sent
+        gevent.sleep(5)  # wait so outbound messages are sent
         resource_client = ResourceClient(c.config)
         assert test_val1 == resource_client.read_file(c.path_on_server() + '/test').decode()
+        assert test_val2 == resource_client.read_file(c.path_on_server() + '/folder/testSub').decode()
         assert v == int(resource_client.read_file(c.path_on_server() + '/testIntSeq').decode())
         assert round(v + 0.5, 2) == round(float(resource_client.read_file(c.path_on_server() + '/testFloatSeq').decode()), 2)
 
@@ -89,6 +96,6 @@ def image_data(image, format='JPEG'):
 
 # if run as a top-level script
 if __name__ == '__main__':
-    test_update_sequence()
+    # test_update_sequence()
     test_update_multi()
     # test_send_image()

@@ -10,7 +10,6 @@ except ModuleNotFoundError:
     from http.client import HTTPConnection, HTTPSConnection
 import logging
 from io import StringIO
-from rhizo.util import build_auth_code
 
 
 # an exception type for API errors
@@ -166,7 +165,7 @@ class FileClient(object):
         self.send_request_to_server('POST', '/api/v1/resources', params)
 
     # write a file to the server; contents can be string or bytes
-    def write(self, file_path, contents, creation_timestamp = None, modification_timestamp = None, new_version = False):
+    def write(self, file_path, contents, creation_timestamp=None, modification_timestamp=None, new_version=True):
         try:
             data = base64.b64encode(contents)  # handle bytes
         except:
@@ -222,17 +221,12 @@ class FileClient(object):
         retry_count = 0
 
         # prepare authentication
-        if self._controller and self._controller.config.get('old_auth', False):
-#        if False:
-            params['authCode'] = build_auth_code(self._secret_key)
-            basic_auth = None
+        if self._controller:  # fix(later): revisit this: can we still get a version/build if using stand-alone resource client?
+            user_name = self._controller.VERSION + '.' + self._controller.BUILD  # send client version as user name
         else:
-            if self._controller:  # fix(later): revisit this: can we still get a version/build if using stand-alone resource client?
-                user_name = self._controller.VERSION + '.' + self._controller.BUILD  # send client version as user name
-            else:
-                user_name = 'resource_client'
-            password = self._secret_key  # send secret key as password
-            basic_auth = base64.b64encode(('%s:%s' % (user_name, password)).encode('utf-8')).decode()
+            user_name = 'resource_client'
+        password = self._secret_key  # send secret key as password
+        basic_auth = base64.b64encode(('%s:%s' % (user_name, password)).encode('utf-8')).decode()
 
         # make request and retry if there is an exception or server error
         while True:

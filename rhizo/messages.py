@@ -148,8 +148,9 @@ class MessageClient(object):
     def process_incoming_message(self, message):
         message_type = None
         parameters = None
-        if str(message)[0] == '{':
-            message_struct = json.loads(str(message))
+        message = str(message)  # shouldn't be needed, but we'll be removing all this code soon, so we can leave it
+        if message[0] == '{':
+            message_struct = json.loads(message)
             if 'type' in message_struct:
                 message_type = message_struct['type']
                 parameters = message_struct['parameters']

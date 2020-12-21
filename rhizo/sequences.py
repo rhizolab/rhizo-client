@@ -23,28 +23,33 @@ class SequenceClient(object):
         self._values[relative_sequence_path] = value
         self._timestamps[relative_sequence_path] = timestamp
 
-    def create(self, relative_sequence_path, data_type, decimal_places=None, units=None):
-        if self._exists_on_server[relative_sequence_path] == False:
-            c = self._controller
-            full_seq_path = c.path_on_server() + '/' + relative_sequence_path
-            if not c.files.file_exists(full_seq_path):
+    def create(self, seq_path, data_type, decimal_places=None, units=None, min_storage_interval=None, max_history=None):
+        c = self._controller
+        if not seq_path.startswith('/'):
+            seq_path = c.path_on_server() + '/' + seq_path
+        if not self._exists_on_server[seq_path]:
+            if not c.files.file_exists(seq_path):
                 data_type_num = data_types[data_type]
-                parts = full_seq_path.rsplit('/', 1)
+                parts = seq_path.rsplit('/', 1)
                 path = parts[0]
                 name = parts[1]
+                if min_storage_interval is None:
+                    min_storage_interval = 20
                 sequence_info = {
                     'path': path,
                     'name': name,
                     'type': 21,  # sequence
                     'data_type': data_type_num,
-                    'min_storage_interval': 20,  # fix(soon): make this an argument? or make it a controller/org-level setting?
+                    'min_storage_interval': min_storage_interval,
                 }
                 if not decimal_places is None:
                     sequence_info['decimal_places'] = decimal_places
+                if not max_history is None:
+                    sequence_info['max_history'] = max_history
                 if units:
                     sequence_info['units'] = units
                 c.files.send_request_to_server('POST', '/api/v1/resources', sequence_info)
-            self._exists_on_server[relative_sequence_path] = True
+            self._exists_on_server[seq_path] = True
 
     def value(self, relative_sequence_path):
         return self._values.get(relative_sequence_path)

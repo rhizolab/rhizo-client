@@ -1,1 +1,11 @@
 server_name: example.com
+
+# Set this to true to make the client request MQTT credentials from the server. This can be
+# useful if the MQTT broker is configured to support JWT authentication such that a new token
+# needs to be generated for each session. Default is to authenticate with the secret key.
+#mqtt_request_credentials: false
+
+# Set this to override the path of the resource folder associated with this controller;
+# individual resource paths are prefixed with this folder name. By default, the folder name
+# is queried from the server. The first character should be a forward slash.
+#path_prefix: /x/y/z

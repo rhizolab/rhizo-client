@@ -1,5 +1,13 @@
 server_name: example.com
 
+# Set the username to use to authenticate with the MQTT broker. If mqtt_request_credentials
+# is set, this value is ignored. Default is "key".
+#mqtt_username: username
+
+# Set the password to use to authenticate with the MQTT broker. If mqtt_request_credentials
+# is set, this value is ignored. Default is the value of the "secret_key" config option.
+#mqtt_password: password
+
 # Set this to true to make the client request MQTT credentials from the server. This can be
 # useful if the MQTT broker is configured to support JWT authentication such that a new token
 # needs to be generated for each session. Default is to authenticate with the secret key.

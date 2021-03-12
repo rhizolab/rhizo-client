@@ -33,7 +33,6 @@ class MessageClient(object):
         # MQTT connection
         if 'mqtt_host' in self._controller.config:
             mqtt_host = self._controller.config.mqtt_host
-            mqtt_request_credentials = self._controller.config.get('mqtt_request_credentials', False)
             mqtt_port = self._controller.config.get('mqtt_port', 443)
             mqtt_tls = self._controller.config.get('mqtt_tls', True)
             mqtt_username = self._controller.config.get('mqtt_username', 'key')
@@ -58,11 +57,6 @@ class MessageClient(object):
             def on_message(client, userdata, msg):
                 # print('MQTT recv: %s, %s' % (msg.topic, msg.payload.decode()))
                 self.process_incoming_message(msg.payload.decode())
-
-            if mqtt_request_credentials:
-                mqtt_creds = self._controller.request_mqtt_credentials()
-                mqtt_username = mqtt_creds['username']
-                mqtt_password = mqtt_creds['password']
 
             self._client = mqtt.Client(transport='websockets')
             self._client.on_connect = on_connect

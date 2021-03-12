@@ -316,15 +316,6 @@ class Controller(object):
         self.config.secret_key = secret_key
         self.files._secret_key = secret_key
 
-    def request_mqtt_credentials(self):
-        """Ask the server for credentials that may be presented to the MQTT broker.
-
-        Return a dict with "username" and "password" keys.
-        """
-        response = json.loads(self.files.send_request_to_server('POST', '/api/v1/mqtt/credentials'))
-        logging.debug('Got JWT from server: username %s password %s', response['username'], response['password'])
-        return response
-
 
 # a custom log handler for sending logged messages to server (in a log sequence)
 class ServerHandler(logging.Handler):

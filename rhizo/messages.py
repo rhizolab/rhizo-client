@@ -33,9 +33,10 @@ class MessageClient(object):
         # MQTT connection
         if 'mqtt_host' in self._controller.config:
             mqtt_host = self._controller.config.mqtt_host
-            mqtt_request_credentials = self._controller.config.get('mqtt_request_credentials', False)
             mqtt_port = self._controller.config.get('mqtt_port', 443)
             mqtt_tls = self._controller.config.get('mqtt_tls', True)
+            mqtt_username = self._controller.config.get('mqtt_username', 'key')
+            mqtt_password = self._controller.config.get('mqtt_password', self._controller.config.secret_key)
 
             # run this on connect/reconnect to MQTT server/broker
             def on_connect(client, userdata, flags, rc):
@@ -61,12 +62,7 @@ class MessageClient(object):
             self._client.on_connect = on_connect
             self._client.on_disconnect = on_disconnect
             self._client.on_message = on_message
-            if mqtt_request_credentials:
-                mqtt_creds = self._controller.request_mqtt_credentials()
-                self._client.username_pw_set(mqtt_creds['username'], mqtt_creds['password'])
-            else:
-                password = self._controller.config.secret_key
-                self._client.username_pw_set('key', password)
+            self._client.username_pw_set(mqtt_username, mqtt_password)
             if mqtt_tls:
                 self._client.tls_set()  # enable SSL
             self._client.connect(mqtt_host, mqtt_port)

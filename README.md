@@ -47,7 +47,7 @@ To run the server-based tests, create `tests_with_server/local.yaml` with your s
 To build a package for public release, follow [the usual procedure](https://packaging.python.org/guides/distributing-packages-using-setuptools/#packaging-your-project):
 
     pip install wheel
-    python setup.py bdist_wheel
+    python setup.py sdist bdist_wheel
 
 The project is configured to build as a universal wheel since it supports both Python 2 and Python 3 and does not include compiled extensions.
 

@@ -39,15 +39,18 @@ class SequenceClient(object):
                     'path': path,
                     'name': name,
                     'type': 21,  # sequence
+                }
+                system_attributes = {
                     'data_type': data_type_num,
                     'min_storage_interval': min_storage_interval,
                 }
                 if not decimal_places is None:
-                    sequence_info['decimal_places'] = decimal_places
+                    system_attributes['decimal_places'] = decimal_places
                 if not max_history is None:
-                    sequence_info['max_history'] = max_history
+                    system_attributes['max_history'] = max_history
                 if units:
-                    sequence_info['units'] = units
+                    system_attributes['units'] = units
+                sequence_info['system_attributes'] = json.dumps(system_attributes)
                 c.files.send_request_to_server('POST', '/api/v1/resources', sequence_info)
             self._exists_on_server[seq_path] = True
 

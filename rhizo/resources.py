@@ -111,6 +111,11 @@ class FileClient(object):
                 raise e
         return True
 
+    # delete a file
+    def delete(self, file_name):
+        assert file_name.startswith('/')
+        file_info = self.send_request_to_server('DELETE', '/api/v1/resources' + file_name)
+
     # returns a dictionary of info about a file
     def info(self, file_name):
         assert file_name.startswith('/')

@@ -3,11 +3,6 @@ server_name: example.com
 # Set the username to use to authenticate with the MQTT broker. Default is "key".
 #mqtt_username: username
 
-# Set the password to use to authenticate with the MQTT broker.  Default is the value of the
+# Set the password to use to authenticate with the MQTT broker. Default is the value of the
 # "secret_key" config option.
 #mqtt_password: password
-
-# Set this to override the path of the resource folder associated with this controller;
-# individual resource paths are prefixed with this folder name. By default, the folder name
-# is queried from the server. The first character should be a forward slash.
-#path_prefix: /x/y/z

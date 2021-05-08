@@ -173,11 +173,8 @@ class Controller(object):
     # get the path of the controller folder on the server
     def path_on_server(self):
         if not self._path_on_server:
-            if self.config.get('path_prefix'):
-                self._path_on_server = self.config['path_prefix']
-            else:
-                file_info = self.files.file_info('/self')
-                self._path_on_server = file_info['path']
+            file_info = self.files.file_info('/self')
+            self._path_on_server = file_info['path']
         return self._path_on_server
 
     # add a custom handler for errors

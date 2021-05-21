@@ -173,7 +173,7 @@ class Controller(object):
     # get the path of the controller folder on the server
     def path_on_server(self):
         if not self._path_on_server:
-            file_info = self.files.file_info('/self')
+            file_info = self.files.info('/self')
             self._path_on_server = file_info['path']
         return self._path_on_server
 
@@ -341,11 +341,6 @@ class ServerHandler(logging.Handler):
         if self.inside_handler:  # if update_sequence does any logging, let's skip it
             return
         self.inside_handler = True
-        try:
-            message = self.format(record)
-            self.controller.sequences.update('log', message)
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except:
-            self.handle_error(record)
+        message = self.format(record)
+        self.controller.sequences.update('log', message)
         self.inside_handler = False
